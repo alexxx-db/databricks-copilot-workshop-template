@@ -6,7 +6,8 @@ the section `.md` / `.genie-code.md` files (that is Phase 2).
 **Companion to:** `2026-09-13-genie-accelerator-track-design.md` (§4 step list, §5 prompt contract).
 **Source of the prompt text:** "Genie in a Bottle" deck, Exercises 1–3 (slides 11a, 14a, 17a, 36).
 We keep the deck's **chunking and wording** and add only: (a) read the context spine first,
-(b) structured `catalog.schema`, (c) the two BYO-context lanes, (d) the Measures-Analysis gate.
+(b) structured `catalog.schema`, (c) the reasoning-surface allocation (**Type A/B/C**, design spec
+§5.1), (d) **Genie Code file-add** as the primary BYO lane, and (e) the Measures-Analysis gate.
 
 ---
 
@@ -29,37 +30,83 @@ Code explain what it plans to do, review the plan, then approve."*
 **Deck behavioral nudge (keep verbatim where it applies):** *"If Genie Code describes a Metric View
 without creating it, reply: 'Create the Metric View now, do not just describe it.'"*
 
+**Reasoning-surface legend (design spec §5.1):**
+- **Type A — app-authored prompt** (`bypass_llm=false`): the section `system_prompt` instructs the
+  app's FM API to *generate* a personalized, ready-to-paste prompt (the `prd_generation` pattern).
+  For Type A steps below, we give **both** the section `system_prompt` *and* an example of the
+  generated output.
+- **Type B — template prompt** (`bypass_llm=true`): variable substitution only; the text is
+  authored by us and copied verbatim. Genie Code does the reasoning.
+- **Type C — data-grounded** (`bypass_llm=true` delivery): the prompt tells the user to **drop files
+  into Genie Code** and reason on the real content — the primary BYO lane.
+
+**Per-step type map:**
+
+| Step | Type | `bypass_llm` |
+|---|---|---|
+| 1 Locate + BYO | A → C | false |
+| 2 Profile | B | true |
+| 3 Measures Analysis (gate) | A + C | false |
+| 4 Draft MV (Path A `/importBI` = C) | B / C | true |
+| 5 Synonyms · 6 Verified queries | B | true |
+| 7 Describe · 8 Instructions · 9 Benchmarks | B (9 opt. A-assisted) | true |
+| 10 Validate · 11 Dashboard | B | true |
+
+> Steps annotated **A** are written out with their `system_prompt` + generated output below. **Every
+> other step is Type B** (`bypass_llm=true`, Genie Code reasons) unless its heading says otherwise.
+
 ---
 
 ## Chapter: Discover
 
-### Step 1 — Locate Data & Bring Context  *(new; app-led + thin GC prompt)*
+### Step 1 — Locate Data & Bring Context  *(Type A → C · `bypass_llm=false`)*
 
-**Leans on:** app `LakehouseParams` (structured input) + FM-API attachment ingestion
-(`useCaseBuilderStream` / `processMetadataCsvStream`); Faker (synthetic branch).
+**Reasoning split:** the app FM API *generates* this prompt (Type A); Genie Code then reasons on the
+real schema + any **files you drop in** (Type C).
+**Leans on:** app `LakehouseParams` (structured input) + FM-API prompt generation; Genie Code
+file-add; Faker (synthetic branch).
 **Gate:** `catalog.schema` saved to session `LakehouseParams` (or synthetic branch chosen);
-`design_prd.md` read; `docs/genie_brief.md` seeded from PRD + any attachments.
+`design_prd.md` read; `docs/genie_brief.md` seeded from PRD + any dropped files.
 
-*App-side, before the prompt:* pick `catalog.schema` (or toggle "No data → generate synthetic");
-optionally attach an Excel glossary / a PDF / a dashboard screenshot. Then copy:
+**Section `system_prompt` — the instruction to the app's FM API (the meta-prompt):**
+
+```
+You are generating a prompt the user will paste into Genie Code. Output a single, ready-to-paste
+prompt (no preamble) that makes Genie Code:
+ 1. Read docs/design_prd.md first and reuse its User Journeys + High-Level Data Entities.
+ 2. Confirm the data location {chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema} — or, if the
+    user chose the synthetic path, offer to generate realistic sample data for {function} and only
+    do so on approval.
+ 3. Read any files the user dropped into the repo (Excel glossary, CSV, docs) and extract measure
+    names, definitions, and field aliases from them.
+ 4. Seed docs/genie_brief.md from the PRD + those files, then STOP for review.
+Personalize the wording to {use_case_title} / {function}. Do NOT invent measures — instruct Genie
+Code to elicit anything the PRD and files don't cover.
+```
+
+*App-side, before this runs:* pick `catalog.schema` (or toggle "No data → synthetic"); **drop your
+Excel/CSV/docs into Genie Code** (into the repo or via the context button).
+
+**Example generated output (what the app emits for you to paste):**
 
 ```
 Read docs/design_prd.md first — reuse its User Journeys and High-Level Data Entities; don't
 re-ask what it already answers.
 
-My data for <function> is in <catalog>.<schema>. (If I said I have none, offer to generate
-realistic sample data for <function>, tell me the tradeoff, and only generate it if I say yes.)
+My data for <function> is in <catalog>.<schema>. (If I have none, offer to generate realistic
+sample data for <function>, tell me the tradeoff, and only generate it if I say yes.)
 
-I've attached my current definitions (an Excel glossary / a dashboard export). Extract every
+Read the files I dropped into the repo (an Excel glossary / a dashboard export) and extract every
 measure name, definition, and field alias you can from them.
 
-Start docs/genie_brief.md from the PRD + attachments: function, candidate measures, and the
-questions my users actually ask. Do NOT profile deeply or build anything yet — show me the
-seeded brief so I can correct it.
+Start docs/genie_brief.md from the PRD + those files: function, candidate measures, and the
+questions my users actually ask. Do NOT profile deeply or build anything yet — show me the seeded
+brief so I can correct it.
 ```
 
-**Golden transcript should show:** agent reads the PRD, echoes the confirmed `catalog.schema`,
-pulls candidate definitions from the attachment, writes a first-pass `genie_brief.md`, and stops.
+**Golden transcript(s) should show:** (a) *app artifact* — the generated prompt above; (b) *Genie
+Code transcript* — the agent reads the PRD, echoes the confirmed `catalog.schema`, **reads the
+dropped file**, writes a first-pass `genie_brief.md`, and stops.
 
 ---
 
@@ -89,14 +136,31 @@ created.
 
 ---
 
-### Step 3 — Measures Analysis  *(new gate; deck Ex1 · "Build Your Measure Inventory")*
+### Step 3 — Measures Analysis  *(Type A + C · `bypass_llm=false`; the gate — deck Ex1 · "Build Your Measure Inventory")*
 
-**Leans on:** FM-API pre-fill from Step 2 profile + PRD + attachments. **Gate:** reviewed measures
-table in `genie_brief.md`; ≤5 measures each with definition + source-of-truth + grain + owner;
-conflicts written; **user signs off before ANY Metric View YAML.**
+**Reasoning split:** the app FM API generates the *framing* prompt (Type A); Genie Code fills the
+table from the real Step 2 profile + **dropped glossary** (Type C).
+**Leans on:** app FM-API prompt generation; Genie Code reasoning on the Step 2 profile + dropped
+files. **Gate:** reviewed measures table in `genie_brief.md`; ≤5 measures each with definition +
+source-of-truth + grain + owner; conflicts written; **user signs off before ANY Metric View YAML.**
+
+**Section `system_prompt` — the instruction to the app's FM API:**
 
 ```
-Read docs/genie_brief.md (profile + candidates) first.
+You are generating a prompt the user will paste into Genie Code. Output a single ready-to-paste
+prompt that makes Genie Code build a MEASURE INVENTORY from what it already has — the Step 2 profile
+in docs/genie_brief.md plus any files the user dropped in — as a table with columns:
+Measure | Current definition | Source of truth (table.column or file) | Grain | Owner | Conflict.
+Enforce: stop at five measures; write BOTH definitions in Conflict when teams disagree; mark unowned
+measures "unowned" (no owner, no Metric View); pre-fill from real data, leave "?" where it needs the
+user. It must STOP and show the table, and must NOT write any Metric View YAML until the user signs
+off. Personalize to {function}.
+```
+
+**Example generated output (paste into Genie Code):**
+
+```
+Read docs/genie_brief.md (the Step 2 profile + candidates) and any files I dropped in first.
 
 Draft my measure inventory as a table with exactly these columns:
   Measure | Current definition (one sentence) | Source of truth (table.column or file) | Grain | Owner (a named person) | Conflict
@@ -104,18 +168,19 @@ Draft my measure inventory as a table with exactly these columns:
 Rules:
 - Stop at five measures. Depth beats coverage — two well-governed measures beat fifteen half-
   governed ones.
-- Name the source of truth as the actual table/column (or the file, if it came from an attachment).
+- Name the source of truth as the actual table/column (or the dropped file it came from).
 - If two teams would define a measure differently, write BOTH in the Conflict column — the conflict
   is the finding, not a blocker.
 - Mark any measure with no named owner as "unowned". No owner, no Metric View.
 
-Pre-fill every cell you can from the brief and my attachments; leave a clear "?" where you need me.
+Pre-fill every cell you can from the brief and my dropped files; leave a clear "?" where you need me.
 Then STOP and show me the table. Do NOT write any Metric View YAML until I sign off on it.
 ```
 
-**Golden transcript should show:** a filled inventory table, at least one conflict surfaced, unowned
-rows flagged, and an explicit "waiting for your sign-off before authoring" stop. **This is the gate
-the whole revision hinges on — no YAML appears in this transcript.**
+**Golden transcript(s) should show:** (a) *app artifact* — the generated framing prompt; (b) *Genie
+Code transcript* — a filled inventory table, at least one conflict surfaced, unowned rows flagged,
+and an explicit "waiting for your sign-off before authoring" stop. **This is the gate the whole
+revision hinges on — no YAML appears in this transcript.**
 
 ---
 
@@ -330,23 +395,28 @@ build beat, and a live dashboard id captured to `.vibecoding-state.md`.
 ## Validation runbook (the Phase-1 spike)
 
 Per the design spec §10 Phase 1: run these prompts **by hand on live Genie Code** against **two
-reference schemas**, exercise **both BYO lanes**, prove the **Measures-Analysis gate**, and save the
-resulting **Genie Code transcripts as golden references**.
+reference schemas**, exercise BYO context **both ways** (drop a file into Genie Code + `/importBI`),
+prove the **Measures-Analysis gate**, and save the resulting **Genie Code transcripts as golden
+references**. For the **Type A** steps (1 and 3), also save the **app-generated prompt** as a
+separate artifact — two artifacts per Type A step.
 
 **Matrix:**
 
 | Run | Schema | Exercises | Must prove |
 |---|---|---|---|
-| A | **Clean-Gold** (a well-modeled `catalog.schema`) | Steps 1–11, Path B; BYO lane A (attach an Excel/CSV glossary at Step 1) | Full happy path end-to-end; brief seeded from attachment; gate holds |
-| B | **Raw / needs-synthetic** (no usable data) | Step 1 synthetic toggle → Faker, then Steps 2–11; BYO lane B (`/importBI` a `.twbx`/`.pbit` at Step 4 Path A) | Adaptive synthetic branch; `/importBI` → Metric View; gate holds |
+| A | **Clean-Gold** (a well-modeled `catalog.schema`) | Steps 1–11, Path B; BYO via file-add (**drop an Excel/CSV glossary into Genie Code** at Step 1) | Full happy path end-to-end; brief seeded from the dropped file; gate holds |
+| B | **Raw / needs-synthetic** (no usable data) | Step 1 synthetic toggle → Faker, then Steps 2–11; BYO via `/importBI` (a `.twbx`/`.pbit` at Step 4 Path A) | Adaptive synthetic branch; `/importBI` → Metric View; gate holds |
 
 **Gate-specific checks (both runs):**
 - **Measures-Analysis gate:** Step 3 transcript contains the reviewed table and **no** Metric View
   YAML; Step 4 only proceeds after an explicit sign-off line.
 - **PRD spine:** Step 1 transcript shows the agent quoting `design_prd.md` User Journeys / Data
   Entities rather than re-asking them.
-- **BYO lane A:** at least one measure definition in the brief is traceable to the uploaded file.
-- **BYO lane B:** a Metric View originates from the `/importBI` payload, with its field aliases
+- **Type A two-artifact capture:** for Steps 1 and 3, the app-generated prompt is saved *separately*
+  from the Genie Code transcript, and the transcript shows Genie Code executing that generated text.
+- **BYO file-add:** Genie Code reads the **dropped** file and at least one measure definition in the
+  brief is traceable to it.
+- **BYO `/importBI`:** a Metric View originates from the `/importBI` payload, with its field aliases
   surviving as synonyms in Step 5.
 
 **Acceptance:** each step reliably (a) triggers the interview, (b) produces its artifact, (c) passes
@@ -436,5 +506,5 @@ Order Value), with Average Order Value flagged non-additive — exactly the deck
 isn't optional" demonstration, on real numbers.
 
 **Run B (raw/synthetic):** at Step 1 choose the synthetic toggle → Faker generates a small
-`<catalog>.<schema>` for `<function>`; the remaining steps are identical. Exercise BYO **lane B**
-here by running `/importBI` on a Tableau/PBI file at Step 4 Path A.
+`<catalog>.<schema>` for `<function>`; the remaining steps are identical. Exercise BYO via
+`/importBI` here by running it on a Tableau/PBI file at Step 4 Path A.

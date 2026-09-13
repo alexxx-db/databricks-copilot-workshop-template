@@ -22,6 +22,16 @@
 5. **Explicit Measures Analysis gate** *before* any Metric View YAML, plus a
    `verify_genie_track_flow.py` CUJ verifier mirroring `scripts/verify_agent_track_flow.py`.
 
+**Revision (2026-09-13, r3) — reasoning-surface allocation:**
+- Two reasoning surfaces are now allocated **by pedagogy** (new **§5.1**): the **app** FM API
+  generates a personalized, ready-to-paste prompt (the `prd_generation` *meta-prompt* pattern) for
+  the intent/discovery beats; **Genie Code** does the *content* reasoning on real UC schema + files
+  the user drops in. Every step is tagged **Type A** (app-generated), **B** (template + variable
+  substitution), or **C** (data-grounded — Genie Code reads dropped files).
+- **BYO context is primarily Genie Code file ingestion** (drop Excel/CSV/docs/BI exports into the
+  repo; it reasons on the real content). The app's FM-API attachment path is demoted to the
+  *secondary, intent-stage* lane. `/importBI` remains the Tableau/PBI special case.
+
 ---
 
 ## 1. Purpose & goals
@@ -65,16 +75,21 @@ optionally continue to serve it to end users via the platform.
    existing **structured** `LakehouseParams` panel (catalog.schema), so prompts arrive templated
    with the real names; if there is no data, a toggle routes to synthetic generation; the Gold
    layer is optional (recommend, don't force).
-7. **Users bring their own definitions.** Business definitions can be seeded from a user's existing
-   context — Excel glossaries, PDFs, dashboard screenshots (app-side FM-API attachment ingestion),
-   or Tableau / Power BI files (Genie Code native `/importBI`) — not just typed from scratch.
+7. **Users bring their own definitions — primarily by handing files to Genie Code.** The primary
+   BYO lane is Genie Code's native **file ingestion**: the user drops Excel glossaries, CSVs, docs,
+   or BI exports into the repo (or attaches them) and Genie Code reasons on the *actual content*.
+   `/importBI` handles Tableau / Power BI files → Metric Views. The app's FM-API attachment path is
+   the *secondary, intent-stage* lane (turn a doc into a use-case description before Genie Code is
+   open) — not the measure-reasoning path.
 8. **Context spine persists and builds on the PRD.** The spine is `docs/design_prd.md` (use-case
    personas, *User Journeys*, *High-Level Data Entities*) → `docs/genie_brief.md` (the measures
    layer that *extends* the PRD) → `.vibecoding-state.md` (enter/exit gates + captured vars). Each
    step reads the PRD before asking the user anything the PRD already answers.
-9. **Deck-sized prompts, not condensed ones.** Each deck prompt is its own interactive beat; the
-   app uses the FM API to pre-fill/personalize each beat with the user's schema, PRD, and BYO
-   context so the "static" deck prompt arrives already contextualized.
+9. **Two reasoning surfaces, allocated by pedagogy (see §5.1).** The **app reasons about framing** —
+   its FM API generates a personalized, ready-to-paste prompt (the `prd_generation` meta-prompt
+   pattern) for the intent/discovery beats. **Genie Code reasons about content** — the real UC
+   schema plus the files the user drops in. Deck-sized prompts stay deck-sized; each is tagged
+   **Type A** (app-generated), **B** (template + variable substitution), or **C** (data-grounded).
 10. **Activation is optional but seamless** — it reuses the app's existing Activation chapter and is
     wired to the same context spine.
 
@@ -117,11 +132,16 @@ APP (runner)                          GENIE CODE (enabling executor)
   (`getLakehouseParams` / `updateLakehouseParams` / `autoSetLakehouseParamsFromLakebase`) and the
   `chapter_3_lakehouse_catalog` / `chapter_3_lakehouse_schema` session params; prompt templates pull
   them in by variable (as `22-genie_silver_metadata.md` already does).
-- **BYO context, lane A (app-side)** — Excel / PDF / dashboard screenshots ingested through the
-  existing FM-API attachment flow (`useCaseBuilderStream` `text_attachments` / `pdf_attachments` /
-  `images`; `processMetadataCsvStream` for CSV) → candidate definitions written into the brief.
-- **BYO context, lane B (Genie Code)** — native `/importBI` for `.twb/.twbx/.pbit` → Metric Views
-  directly, surfaced as "Path A" in the Draft-Metric-View step.
+- **BYO context — primary lane (Genie Code file ingestion)** — the user drops Excel / CSV / docs /
+  BI exports into the repo (or attaches them via Genie Code's context button); prompts direct Genie
+  Code to read + reason on the *actual content* and write what it learns into `genie_brief.md`. This
+  is preferred because Genie Code reasons on the real file (no lossy app-side extraction), the file
+  persists beside the brief, and there is no round-trip the app cannot do.
+- **BYO context — BI-file special case (`/importBI`)** — native `/importBI` for `.twb/.twbx/.pbit`
+  → Metric Views directly, surfaced as "Path A" in the Draft-Metric-View step.
+- **BYO context — secondary lane (app FM-API attachment)** — `useCaseBuilderStream` /
+  `processMetadataCsvStream` turn an upload into a **use-case description at the intent stage**
+  (Step 0), before Genie Code is open. Not the measure-reasoning path.
 
 This spine is how interactivity survives across steps and across **new Genie Code chat threads**:
 each step re-reads the PRD, the brief, and the state file, so the agent always knows what the user
@@ -141,7 +161,7 @@ interactive beat), aligned to the deck's original prompt chunking (Ex1–Ex3).
 | # | Step (app card) | Chapter | Reuses tag | Genie Code prompt (Elicit→Propose→Build) | Built-in leaned on | We wrap | **Acceptance gate** |
 |---|---|---|---|---|---|---|---|
 | 0 | **Define Intent** | on-ramp (app) | `usecase_selection` → `prd_generation` | *App-side*: function, industry, voice input; PRD authored to `docs/design_prd.md` | — (app) | use-case + PRD machinery | Intent captured; `docs/design_prd.md` exists |
-| 1 | **Locate Data & Bring Context** | Discover | `genie_silver_metadata` + `LakehouseParams` | *App-side structured input*: pick `catalog.schema` (or "no data → synthetic"); optionally attach Excel/PDF/dashboard exports. *Genie Code*: "Read `docs/design_prd.md`; confirm the data location I captured; seed the brief." | schema listing, Faker, FM-API attachment ingestion | structured-input reuse + synthetic wrap + BYO ingestion | `catalog.schema` saved to session `LakehouseParams` (or synthetic branch chosen); `design_prd.md` read; `genie_brief.md` seeded from PRD + any BYO context |
+| 1 | **Locate Data & Bring Context** | Discover | `genie_silver_metadata` + `LakehouseParams` | *App-side structured input*: pick `catalog.schema` (or "no data → synthetic"). *Genie Code (Type A prompt)*: "Read `docs/design_prd.md`; confirm the data location I captured; **read any files I dropped in**; seed the brief." | schema listing, Faker, Genie Code file-add | structured-input reuse + synthetic wrap + Type A generation | `catalog.schema` saved to session `LakehouseParams` (or synthetic branch chosen); `design_prd.md` read; `genie_brief.md` seeded from PRD + any dropped files |
 | 2 | **Profile Schema** | Discover | `genie_silver_metadata` | "Profile `<catalog>.<schema>`; produce an ERD; tell me what the schema can support today." (deck Ex1) | schema analysis | interview scaffold + brief format | ERD produced; schema-supportability noted in the brief |
 | 3 | **Measures Analysis** *(new gate)* | Discover | *(new)* | "From the profile + PRD + my BYO context, draft a measures table — definition, source-of-truth, grain, owner, cross-team conflicts. Review with me. **No YAML yet.**" | FM-API draft (app pre-fills) | measures-analysis gate | Reviewed measures table in `genie_brief.md`; ≤5 measures each w/ definition + source + grain + owner; conflicts written; **user signs off before any Metric View YAML** |
 | 4 | **Draft Metric View** | Semantic | *(split from `genie_space`)* | Per approved measure: propose YAML (grain, `MEASURE()`, non-additive flag) → review → author natively. **Path A:** `/importBI` a Tableau/PBI file to seed the MV. (deck Ex2·1) | `using-metric-views` + `/importBI` | best-practice checklist + validation | Each approved measure → 1 Metric View live; `MEASURE()` query returns; non-additive flagged |
@@ -208,8 +228,9 @@ On approval, build it — using your native <skill> capability — and:
 
 ### Worked example — Step 1 (Locate Data & Bring Context)
 
-The `catalog.schema` and any attachments are captured **app-side** (structured `LakehouseParams`
-input + FM-API attachment ingestion) *before* this prompt runs, so the prompt arrives templated:
+The `catalog.schema` is captured **app-side** via structured `LakehouseParams`; any data files are
+handed to **Genie Code** directly (dropped into the repo or attached). This beat is **Type A** — the
+app FM API *generates* this prompt, personalized to the use case, before you paste it:
 
 ```
 Read docs/design_prd.md first — reuse its User Journeys and High-Level Data Entities;
@@ -218,8 +239,8 @@ don't re-ask what it already answers.
 My data is in <catalog>.<schema>. (If I said I have none, offer to generate realistic
 sample data for <function> and tell me the tradeoff.)
 
-I've attached my current definitions (an Excel glossary / a dashboard export). Pull the
-measure names and definitions you can from them.
+I've dropped my current definitions (an Excel glossary / a dashboard export) into the repo —
+read them and pull the measure names and definitions you can from them.
 
 Then, only for what the PRD + attachments don't cover, interview me — one question at a
 time, wait for each answer:
@@ -236,6 +257,44 @@ produces the ERD, and Measures Analysis produces the **reviewed measures table t
 View YAML** (deck Ex1 "inventory" split out from Ex2 "author"). Steps 4–6 and 7–9 each carry one
 deck prompt apiece.
 
+### 5.1 Reasoning-surface allocation (App FM-API vs. Genie Code)
+
+**Organizing principle:** *the app reasons about **framing**; Genie Code reasons about **content**.*
+The app has only session context (industry, use case, `use_case_description`, params, prior
+generated prompts), so it is the *prompt-smith* — it turns intent into a great, personalized prompt.
+Genie Code has the repo files + the real data (UC schema, dropped files), so it is the *analyst and
+builder*. The app never reads the user's repo or data; Genie Code never sees the app session. Each
+step is exactly one of three types:
+
+| Type | App mechanic | Who reasons | Use when |
+|---|---|---|---|
+| **A — App-authored prompt** (meta-prompt) | `bypass_llm=false`: the section `system_prompt` instructs the FM API to *generate a personalized prompt* from `use_case_description` + params + prior prompts. Output = a ready-to-paste Genie Code prompt. **The `prd_generation` pattern.** | App writes the prompt → Genie Code executes it | Framing/intent/discovery beats where personalization aids understanding and there is no real data to reason on yet |
+| **B — Template prompt** | `bypass_llm=true`: variable substitution only (`{catalog}`, `{schema}`, `{function}`); text authored by us, stays exact | Genie Code | Guardrail-heavy build steps where correctness beats personalization (`serialized_space` contract, `MEASURE()` rules) |
+| **C — Data-grounded prompt** | Same delivery as B, but the prompt directs the user to **drop files into Genie Code** and instructs it to read + reason on them | Genie Code, on real file content | Any step where the user's own definitions/data are the input — the primary BYO lane |
+
+**Per-step allocation:**
+
+| Step | Type | `bypass_llm` | App generates? | Genie Code reasons on |
+|---|---|---|---|---|
+| *PRD* (Step 0 tail) | A | false | ✔ PRD-creation prompt | writes `design_prd.md` |
+| 1 Locate + BYO | A → C | false | ✔ personalized locate/brief prompt | real schema + **dropped files** |
+| 2 Profile | B | true | — | UC schema |
+| 3 Measures Analysis | A + C | false | ✔ prompt that *frames* the inventory | real profile + **dropped glossary** → table |
+| 4 Draft MV (+`/importBI`) | B / C | true | — | signed-off measures + **BI file** |
+| 5 Synonyms | B | true | — | the Metric View + user vocabulary |
+| 6 Verified queries | B | true | — | the Metric View |
+| 7 Describe agent | B | true | — | brief + `serialized_space` contract |
+| 8 Instructions | B | true | — | the space |
+| 9 Benchmarks | B (opt. A-assisted) | true | (opt) draft question list | the Metric View |
+| 10 Validate | B | true | — | benchmark results → failure→fix |
+| 11 Dashboard | B | true | — | the Metric View |
+
+**What the app *cannot* personalize** (and must therefore delegate): actual measures, PRD contents,
+and profiled columns all live in the repo, not the app session. So a Type A prompt for this track
+generates instructions that tell Genie Code to *go read the real content* (`design_prd.md`, dropped
+files, the live schema) rather than embedding invented specifics. The app supplies personalized
+framing + pedagogy; Genie Code supplies the real data + build. This keeps the seam honest.
+
 ---
 
 ## 6. Skill / gap map (what we build vs. reuse)
@@ -243,8 +302,9 @@ deck prompt apiece.
 | Capability | Genie Code native | Our contribution |
 |---|---|---|
 | Structured schema-location input | — (app) | **Reuse `LakehouseParams` + `chapter_3_lakehouse_*`** so prompts template the real `catalog.schema` |
-| BYO context: Excel / PDF / dashboard exports | — (app) | **Reuse FM-API attachment flow** (`useCaseBuilderStream`, `processMetadataCsvStream`) → seed definitions into the brief |
-| BYO context: Tableau / Power BI files | ✅ `/importBI` | Surface `/importBI` as "Path A" in the Draft-Metric-View step; point to `genie-space-patterns` / export-import skills |
+| BYO context (**primary**): Excel / CSV / docs | ✅ Genie Code file-add | Prompts direct the user to drop files into Genie Code; it reasons on the real content → `genie_brief.md` (Type C) |
+| BYO context (BI files): Tableau / Power BI | ✅ `/importBI` | Surface `/importBI` as "Path A" in Draft-Metric-View; point to `genie-space-patterns` / export-import skills |
+| BYO context (secondary): app upload at intent | — (app FM-API) | `useCaseBuilderStream` / `processMetadataCsvStream` at **Step 0 only** — doc → `use_case_description` |
 | Schema profiling / ERD | ✅ | Interview scaffold + brief format |
 | Measures analysis (inventory before YAML) | — | **New gate**: reviewed measures table (definition, source-of-truth, grain, owner, conflicts); FM API pre-fills, user signs off before any MV YAML |
 | Metric View authoring | ✅ `using-metric-views` | Best-practice checklist (`MEASURE()`, synonyms, non-additive, format types) |
@@ -345,8 +405,8 @@ in a broken half-state.
 - **Phase 0 — this spec, signed off.** Per-step gates (§4) are the tests.
 - **Phase 1 — prove prompts on live Genie Code (a cheap spike).** Run the draft prompts for the
   core steps (1–11) by hand against **two representative schemas** — one with a clean Gold layer, one
-  raw/needs-synthetic (exercises the adaptive gate) — and exercise **both BYO-context lanes** (an
-  attachment upload and a `/importBI` file) at least once. Iterate the text until each reliably
+  raw/needs-synthetic (exercises the adaptive gate) — and exercise BYO context both ways (**drop a
+  file into Genie Code** and run `/importBI`) at least once. Iterate the text until each reliably
   (a) triggers the interview, (b) produces the artifact, (c) passes its gate. **Save the resulting
   Genie Code transcripts as golden references.** This de-risks ~80% of the project for ~a day.
 - **Phase 2 — encode into the source-of-truth format, behind existing tooling.** Only now write the
@@ -372,6 +432,8 @@ in a broken half-state.
 |---|---|---|
 | Per-step | The `Gate` passes on a live Genie Code run | ✅ gate pattern in sections |
 | Per-step | Golden transcript matches expected behavior | New (Phase 1 artifact) |
+| Per-step (Type A) | The app-generated prompt is captured *separately* from the Genie Code transcript | New (Phase 1) |
+| BYO | Genie Code reads a dropped CSV/Excel and reasons on it | New (Phase 1) |
 | Prompt source | `lint_section_prompts.py` + contract baseline diff + seed round-trip | ✅ tooling in `apps_lakebase/prompts/` |
 | Flow / CUJ | `verify_genie_track_flow.py` asserts the ordered step set + gates | New (mirrors `verify_agent_track_flow.py`) |
 | App | Playwright e2e walks the track | ✅ e2e harness exists |
@@ -399,7 +461,8 @@ is never broken for the other levels.
 | Q6 | How granular should the prompts be? | **Deck-sized chunks, not condensed.** Each deck prompt (Ex2 draft/synonyms/verified; Ex3 describe/instructions/benchmarks) is its own beat, grouped under the Semantic and Agent chapters. Interactivity + context are added *to* those prompts. |
 | Q7 | Is `genie_brief.md` the PRD, or downstream of it? | **Downstream.** `genie_brief.md` **extends** the `prd_generation`-authored `docs/design_prd.md` (reuses its User Journeys + High-Level Data Entities); Step 1 reads the PRD first. |
 | Q8 | How is the data location captured? | **Structured, app-side.** Reuse `LakehouseParams` + `chapter_3_lakehouse_*`; prompts template the real `catalog.schema`. A "no data → synthetic" toggle routes to Faker. |
-| Q9 | How do users bring existing definitions? | **Two lanes.** App-side attachments (Excel/PDF/dashboard exports) via the FM-API attachment flow → brief; Genie Code native `/importBI` (Tableau/PBI) → Metric Views (Path A in the Draft-MV step). |
+| Q9 | How do users bring existing definitions? | **Primarily by handing files to Genie Code.** Drop Excel/CSV/docs into Genie Code — it reasons on the real content → brief (Type C); `/importBI` for Tableau/PBI → Metric Views. App-side upload is a secondary, **intent-stage** lane only (Step 0). |
+| Q10 | How is reasoning split between the app and Genie Code? | **By pedagogy, per §5.1.** The app FM API generates personalized prompts (**Type A**) for the intent/discovery framing beats (PRD, Locate, Measures); Genie Code does the content reasoning (**Types B/C**) on real schema + dropped files for the build. Each step is tagged A/B/C. |
 
 ---
 
