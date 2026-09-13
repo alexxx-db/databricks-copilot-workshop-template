@@ -48,7 +48,8 @@ without creating it, reply: 'Create the Metric View now, do not just describe it
 | 2 Profile | B | true |
 | 3 Measures Analysis (gate) | A + C | false |
 | 4 Draft MV (Path A `/importBI` = C) | B / C | true |
-| 5 Synonyms · 6 Verified queries | B | true |
+| 5 Synonyms (Metric View `synonyms:`) | B | true |
+| 6 Verified queries (Genie space — Agent chapter, after Step 7) | B | true |
 | 7 Describe · 8 Instructions · 9 Benchmarks | B (9 opt. A-assisted) | true |
 | 10 Validate · 11 Dashboard | B | true |
 
@@ -224,6 +225,13 @@ not column names.
 > If Genie Code describes a Metric View without creating it, reply: *"Create the Metric View now, do
 > not just describe it."*
 
+> **Snowflake gotcha (Layer-2 finding):** single-level joins (fact → one dimension) and their
+> dimensions resolve cleanly. **Nested** (snowflake) joins *parse*, but referencing a deeply nested
+> join's column in a dimension `expr` is finicky (`customer.c_mktsegment` did not resolve as the
+> docs imply). For multi-hop dimensions (e.g. Region via `customer → nation → region`), prefer a
+> **pre-joined source view** or keep joins single-level. `synonyms`/`display_name`/`format` require
+> YAML **v1.1**.
+
 **Golden transcript should show:** grain justified per measure, non-additive measures flagged,
 YAML reviewed *before* creation, then a live Metric View; a `SELECT MEASURE(...) ... GROUP BY ALL`
 returns a number.
@@ -232,13 +240,20 @@ returns a number.
 
 ### Step 5 — Add Synonyms  *(deck Ex2 · prompt 2, slide 14a)*
 
-**Leans on:** native `using-metric-views`. **Gate:** ≥3 synonyms per measure/key dimension.
+**Leans on:** native `using-metric-views` (Metric View `synonyms:` field). **Gate:** ≥3 synonyms per
+measure/key dimension, written to the MV YAML (`synonyms:`).
+
+> **Layer-2 confirmed:** `synonyms` **is** a Metric View YAML feature (v1.1, ≤10 per measure/field)
+> — verified live by re-creating the MV with `synonyms:` on every measure/dimension. It is *also*
+> honored by Genie/BI for term discovery, so synonyms belong **here, on the Metric View** (not only
+> on the space). Only *verified queries* (Step 6) are Genie-space-only.
 
 ```
-For the Metric View @<catalog>.<schema>.<metric_view>, add synonyms to every measure and dimension.
+For the Metric View @<catalog>.<schema>.<metric_view>, add a `synonyms:` list (YAML v1.1) to every
+measure and to each key dimension — up to 10 each.
 
-Include, for each one: the formal name, any acronym, the informal phrasing people in <function>
-actually use, and any legacy name from our old reporting.
+Include, for each one: any acronym, the informal phrasing people in <function> actually use, and any
+legacy name from our old reporting.
 
 Show me the updated YAML before saving.
 
@@ -252,23 +267,12 @@ BI field aliases folded in when Path A was used; YAML reviewed before save.
 
 ---
 
-### Step 6 — Add Verified Queries  *(deck Ex2 · prompt 3, slide 14a)*
+### Step 6 — Add Verified Queries → **moved to the Agent chapter**
 
-**Leans on:** native SQL. **Gate:** verified example queries attached; each returns; each shows the
-correct filter + `MEASURE()` wrapping.
-
-```
-Add verified queries to @<catalog>.<schema>.<metric_view> for the two or three questions our
-<function> users ask most often (pull them from the brief).
-
-Each should show the correct filter and MEASURE() wrapping. These are the queries Genie should run
-rather than reason out from scratch, so make them exact.
-
-Show me each before saving.
-```
-
-**Golden transcript should show:** 2–3 verified queries, each with explicit filter + `MEASURE()`,
-each executed once to prove it returns.
+> **Layer-2 finding:** verified/example queries are **not** a Metric View feature — they live on the
+> **Genie space** (`instructions.example_question_sqls`), confirmed by the MV syntax reference (no
+> such field) and the space's serialized structure. This beat therefore runs **after** the space
+> exists (Step 7). See **Step 6 (relocated) — Add Verified Queries** in the Agent chapter below.
 
 ---
 
@@ -302,6 +306,27 @@ Show me the space's serialized config before you create it.
 **Golden transcript should show:** the Metric View placed under `data_sources.metric_views` (not as
 a bare table), a plain-language scope, config reviewed before creation, then a live space id captured
 to `.vibecoding-state.md`.
+
+---
+
+### Step 6 (relocated) — Add Verified Queries  *(Genie space; deck Ex2 · prompt 3)*
+
+**Leans on:** Genie space `instructions.example_question_sqls` (**not** the Metric View). **Runs
+after Step 7** — the space must exist first. **Gate:** 2–3 verified Q→SQL examples attached to the
+*space*; each queries the governed Metric View via `MEASURE()`; each returns.
+
+```
+For my Genie space, add verified example queries (question → SQL) for the two or three questions our
+<function> users ask most often (pull them from the brief).
+
+Each SQL must query the governed Metric View via MEASURE() with the correct filters — these are the
+answers Genie should reuse rather than reason from scratch, so make them exact.
+
+Show me each question/SQL pair before saving them to the space.
+```
+
+**Golden transcript should show:** 2–3 example_question_sqls saved to the *space* (not the MV), each
+`MEASURE()`-based, each executed once to prove it returns.
 
 ---
 
@@ -422,6 +447,29 @@ separate artifact — two artifacts per Type A step.
 **Acceptance:** each step reliably (a) triggers the interview, (b) produces its artifact, (c) passes
 its gate — text iterated until true, transcripts saved under a Phase-1 evidence folder for Phase 2
 to encode against.
+
+---
+
+## Layer-2 validation results (live `samples.tpch` on `fevm-serverless`, 2026-09-13)
+
+Proxy validation via CLI (`--profile fevm-serverless`); assets created in
+`serverless_stable_6t92c3_catalog.genie_accel_phase1`:
+
+- **Steps 1–3 (read-only):** schemas confirmed; gross `SUM(l_extendedprice)` = **1.147T** vs net
+  `SUM(l_extendedprice*(1-l_discount))` = **1.090T** (~5% — the real Finance-vs-Sales-Ops conflict);
+  AOV non-additive; on-time rate computable from `l_receiptdate` / `l_commitdate`. ✔
+- **Step 4 (Metric View):** `order_revenue_metrics` created (single-level `orders` join); a
+  `MEASURE()` query returned monthly gross / net / units / AOV / on-time. ✔
+- **Step 4 gotcha:** nested (snowflake) join dimension referencing is finicky — prefer single-level
+  joins or a pre-joined source view for multi-hop dims (Region / Market Segment).
+- **Step 5 (synonyms):** ✔ MV re-created with `synonyms:` on every measure/dimension — **confirmed a
+  Metric View v1.1 feature** (also honored by Genie/BI).
+- **Step 6 (verified queries):** ✖ **not** a Metric View feature → Genie space
+  `instructions.example_question_sqls` (relocated to the Agent chapter, runs after Step 7).
+- **Steps 7–9 (space):** `databricks genie create-space` exists but requires a full
+  `serialized_space` (the easy `table_identifiers` path is MCP-only); benchmarks have
+  `databricks genie genie-create-eval-run` (Beta). Live space build deferred to **Layer 3** (real
+  Genie Code) where the native `genie_space` skill authors the serialized contract.
 
 ---
 

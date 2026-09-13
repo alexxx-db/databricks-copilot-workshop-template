@@ -32,6 +32,19 @@
   repo; it reasons on the real content). The app's FM-API attachment path is demoted to the
   *secondary, intent-stage* lane. `/importBI` remains the Tableau/PBI special case.
 
+**Revision (2026-09-13, r4) — Layer-2 live-validation corrections (on `samples.tpch`):**
+- **Synonyms are a Metric View feature** (YAML v1.1 `synonyms:`, ≤10 per measure/field) — verified
+  live by re-creating the MV with synonyms on every measure/dimension. Step 5 stays in the
+  Semantic / Metric-View chapter (synonyms are *also* honored by Genie/BI for discovery).
+- **Verified / example queries are NOT a Metric View feature** — they are a Genie-space feature
+  (`instructions.example_question_sqls`). **Step 6 moves from the Semantic chapter to the Agent
+  chapter**, and runs *after* the space exists (Step 7).
+- **Snowflake gotcha:** nested (snowflake) join dimension referencing is finicky; prefer
+  single-level joins or a pre-joined source view for multi-hop dimensions (Region / Market Segment).
+- **Genie space creation modality:** `databricks genie create-space` requires a full
+  `serialized_space` (the easy `table_identifiers` path is MCP-only), so the space build stays a
+  Genie-Code / MCP beat (Layer 3), not raw CLI.
+
 ---
 
 ## 1. Purpose & goals
@@ -165,8 +178,8 @@ interactive beat), aligned to the deck's original prompt chunking (Ex1–Ex3).
 | 2 | **Profile Schema** | Discover | `genie_silver_metadata` | "Profile `<catalog>.<schema>`; produce an ERD; tell me what the schema can support today." (deck Ex1) | schema analysis | interview scaffold + brief format | ERD produced; schema-supportability noted in the brief |
 | 3 | **Measures Analysis** *(new gate)* | Discover | *(new)* | "From the profile + PRD + my BYO context, draft a measures table — definition, source-of-truth, grain, owner, cross-team conflicts. Review with me. **No YAML yet.**" | FM-API draft (app pre-fills) | measures-analysis gate | Reviewed measures table in `genie_brief.md`; ≤5 measures each w/ definition + source + grain + owner; conflicts written; **user signs off before any Metric View YAML** |
 | 4 | **Draft Metric View** | Semantic | *(split from `genie_space`)* | Per approved measure: propose YAML (grain, `MEASURE()`, non-additive flag) → review → author natively. **Path A:** `/importBI` a Tableau/PBI file to seed the MV. (deck Ex2·1) | `using-metric-views` + `/importBI` | best-practice checklist + validation | Each approved measure → 1 Metric View live; `MEASURE()` query returns; non-additive flagged |
-| 5 | **Add Synonyms** | Semantic | *(split)* | "Add ≥3 synonyms per measure/dimension from my users' real vocabulary." (deck Ex2·2) | `using-metric-views` | synonym-coverage checklist | ≥3 synonyms present per measure/key dimension |
-| 6 | **Add Verified Queries** | Semantic | *(split)* | "Add the example queries this Metric View should reliably answer." (deck Ex2·3) | SQL | verified-query checklist | Verified example queries attached; each returns |
+| 5 | **Add Synonyms** | Semantic | *(split)* | "Add ≥3 synonyms per measure/dimension from my users' real vocabulary." (deck Ex2·2) | `using-metric-views` (MV `synonyms:` field) | synonym-coverage checklist | ≥3 synonyms per measure/key dimension in the **MV YAML** (`synonyms:`, v1.1) |
+| 6 | **Add Verified Queries** | **Agent** *(moved from Semantic; runs after Step 7)* | `genie_space` | "Add the example queries the agent should reliably answer." (deck Ex2·3) | Genie space `instructions.example_question_sqls` | verified-query checklist | Verified Q→SQL examples on the **space** (not the MV); each `MEASURE()`-based; each returns |
 | 7 | **Describe the Agent** | Agent | `genie_space` | "Describe the agent's job + scope in plain language; attach the Metric Views." (deck Ex3·1) | partial native | `serialized_space` contract + export/import (existing skill) | Space scaffold w/ description; MVs under `data_sources.metric_views`; `sql_functions` per TVF |
 | 8 | **Author Instructions** | Agent | `genie_space` | "Write lean instructions ≤20 lines; climb the trust stack — context over rules." (deck Ex3·2) | native | instruction-budget checklist | Instructions ≤20 lines; no redundant/contradictory rules |
 | 9 | **Draft Benchmarks** | Agent | `genie_space` | "Propose ≥10 benchmark questions from the brief; I correct the *expected answers*." → finalize space (deck Ex3·3) | partial native | benchmark gate + generation prompt | Space live; ≥10 benchmarks w/ SQL; runs a real question correctly |
@@ -178,10 +191,12 @@ interactive beat), aligned to the deck's original prompt chunking (Ex1–Ex3).
 | 14 | **Visualization App** | Activation (optional) | `activation_app_design`, `activation_build_wire`, `activation_wire_lakebase`, `activation_deploy_validate` | AppKit app over Lakebase; embeds Genie/dashboard | ❌ not native | AppKit reuse (existing) | App deployed & serving |
 | C | **Clean Up** | close | `workspace_cleanup` | Tear down workshop resources | — | existing | Resources removed |
 
-**Granularity note (r2):** steps 4–6 (Metric View draft / synonyms / verified queries) and 7–9
-(describe / instructions / benchmarks) are deliberately **separate beats**, mirroring the deck's
-Exercise 2 and Exercise 3 prompt chunking. The runner groups them under the **Semantic** and
-**Agent** chapters so the nav stays legible while each beat keeps its own copy-able prompt. We are
+**Granularity note (r2, corrected r4):** the Metric-View beats (4 draft, 5 synonyms) and the Agent
+beats (7 describe, 8 instructions, 9 benchmarks) are deliberately **separate beats**, mirroring the
+deck's Exercise 2 and Exercise 3 chunking. **Verified queries (6)** moved from Semantic → Agent (r4:
+they are a Genie-space feature, `example_question_sqls`, not a Metric View field) and run after the
+space exists. The runner groups them under the **Semantic** and **Agent** chapters so the nav stays
+legible while each beat keeps its own copy-able prompt. We are
 adding interactivity + context to those deck prompts — not condensing them.
 
 **Retirement note (Q2):** the current `genie-accelerator` step set
@@ -281,8 +296,8 @@ step is exactly one of three types:
 | 2 Profile | B | true | — | UC schema |
 | 3 Measures Analysis | A + C | false | ✔ prompt that *frames* the inventory | real profile + **dropped glossary** → table |
 | 4 Draft MV (+`/importBI`) | B / C | true | — | signed-off measures + **BI file** |
-| 5 Synonyms | B | true | — | the Metric View + user vocabulary |
-| 6 Verified queries | B | true | — | the Metric View |
+| 5 Synonyms | B | true | — | the Metric View (`synonyms:`) + user vocabulary |
+| 6 Verified queries *(Agent chapter)* | B | true | — | the Genie space (`example_question_sqls`) |
 | 7 Describe agent | B | true | — | brief + `serialized_space` contract |
 | 8 Instructions | B | true | — | the space |
 | 9 Benchmarks | B (opt. A-assisted) | true | (opt) draft question list | the Metric View |
@@ -307,9 +322,10 @@ framing + pedagogy; Genie Code supplies the real data + build. This keeps the se
 | BYO context (secondary): app upload at intent | — (app FM-API) | `useCaseBuilderStream` / `processMetadataCsvStream` at **Step 0 only** — doc → `use_case_description` |
 | Schema profiling / ERD | ✅ | Interview scaffold + brief format |
 | Measures analysis (inventory before YAML) | — | **New gate**: reviewed measures table (definition, source-of-truth, grain, owner, conflicts); FM API pre-fills, user signs off before any MV YAML |
-| Metric View authoring | ✅ `using-metric-views` | Best-practice checklist (`MEASURE()`, synonyms, non-additive, format types) |
+| Metric View authoring | ✅ `using-metric-views` | Best-practice checklist (`MEASURE()`, **synonyms** — MV `synonyms:` field, v1.1, ≤10 each — non-additive, format types); **snowflake gotcha**: prefer single-level joins / a pre-joined source view for multi-hop dims |
 | TVFs | ✅ SQL | STRING-param / Genie-compat checklist (existing skill as CI reference) |
-| Genie space create | ⚠️ shell only | `serialized_space` contract + export/import API (**existing skill**) |
+| Genie space create | ⚠️ shell only | `serialized_space` contract + export/import API (**existing skill**); `databricks genie create-space` needs a full `serialized_space` — the easy `table_identifiers` path is MCP-only |
+| Verified / example queries | ✅ (Genie space) | Genie space `instructions.example_question_sqls` — **not** a Metric View field; authored *after* the space exists (Step 6, Agent chapter) |
 | Benchmarks | ⚠️ | "answers are a guess — you verify" gate + generation prompt |
 | AI/BI dashboard | ✅ | Thin pointer to Metric Views |
 | Synced tables / Lakebase / App | ❌ | **Reuse existing Activation + AppKit sections** |
