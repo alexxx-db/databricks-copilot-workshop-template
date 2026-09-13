@@ -4,6 +4,24 @@
 **Date:** 2026-09-13
 **Scope:** Revamp of the app's `genie-accelerator` workshop track, optimized for Genie Code as the execution surface.
 
+**Revision (2026-09-13, r2) — folds in five review revisions:**
+1. **Deck-aligned granularity.** The core is re-expanded from 5 condensed steps back to the deck's
+   right-sized chunks (Metric View draft / synonyms / verified queries as separate beats; agent
+   describe / instructions / benchmarks as separate beats). We keep the *chunking* and add
+   interactivity + context — we do not re-condense.
+2. **`design_prd.md` is the spine's head.** `docs/genie_brief.md` now **extends** the
+   `prd_generation`-authored `docs/design_prd.md` (reads its *User Journeys* + *High-Level Data
+   Entities*) instead of starting cold.
+3. **Structured schema input.** The entry reuses the app's existing `LakehouseParams` /
+   `chapter_3_lakehouse_catalog` / `chapter_3_lakehouse_schema` machinery so prompts arrive at Genie
+   Code carrying the real `catalog.schema` (not a `<placeholder>`); a "no data → synthetic" toggle
+   routes to the Faker path.
+4. **Bring-your-own context.** Two ingestion lanes seed business definitions: (a) app-side
+   attachments (Excel / PDF / dashboard screenshots) via the existing FM-API attachment flow, and
+   (b) Genie Code's native `/importBI` for Tableau / Power BI files → Metric Views.
+5. **Explicit Measures Analysis gate** *before* any Metric View YAML, plus a
+   `verify_genie_track_flow.py` CUJ verifier mirroring `scripts/verify_agent_track_flow.py`.
+
 ---
 
 ## 1. Purpose & goals
@@ -43,12 +61,22 @@ optionally continue to serve it to end users via the platform.
    *interview → propose → confirm*; the app does not simulate the chat.
 5. **App = the runner** (initializer, big-picture map, prompt guide, "How it works" teaching).
    **Genie Code = the enabling executor** (incremental, interactive build).
-6. **Adaptive entry.** Step 1 asks where the data is; offers synthetic data generation if none;
-   the Gold layer is optional (recommend, don't force).
-7. **Context spine persists** via `.vibecoding-state.md` (enter/exit gates + captured vars) and
-   `docs/genie_brief.md`.
-8. **Activation is optional but seamless** — it reuses the app's existing Activation chapter and is
-   wired to the same context spine.
+6. **Adaptive entry with structured input.** Step 1 captures where the data is through the app's
+   existing **structured** `LakehouseParams` panel (catalog.schema), so prompts arrive templated
+   with the real names; if there is no data, a toggle routes to synthetic generation; the Gold
+   layer is optional (recommend, don't force).
+7. **Users bring their own definitions.** Business definitions can be seeded from a user's existing
+   context — Excel glossaries, PDFs, dashboard screenshots (app-side FM-API attachment ingestion),
+   or Tableau / Power BI files (Genie Code native `/importBI`) — not just typed from scratch.
+8. **Context spine persists and builds on the PRD.** The spine is `docs/design_prd.md` (use-case
+   personas, *User Journeys*, *High-Level Data Entities*) → `docs/genie_brief.md` (the measures
+   layer that *extends* the PRD) → `.vibecoding-state.md` (enter/exit gates + captured vars). Each
+   step reads the PRD before asking the user anything the PRD already answers.
+9. **Deck-sized prompts, not condensed ones.** Each deck prompt is its own interactive beat; the
+   app uses the FM API to pre-fill/personalize each beat with the user's schema, PRD, and BYO
+   context so the "static" deck prompt arrives already contextualized.
+10. **Activation is optional but seamless** — it reuses the app's existing Activation chapter and is
+    wired to the same context spine.
 
 ---
 
@@ -73,15 +101,31 @@ APP (runner)                          GENIE CODE (enabling executor)
 - **Genie Code = "the enabling executor":** where the incremental, interactive work happens,
   driven by our curated Elicit → Propose → Build prompts.
 
-**Context spine (the object every step reads):**
-- `docs/genie_brief.md` — function, 3–5 measures, one-sentence definitions, source-of-truth,
-  definition conflicts, the questions users actually ask, and the target tables.
-- `.vibecoding-state.md` captured vars — `catalog`, `gold_schema`, Metric View names,
-  `genie_space_id`, `warehouse_id`, `dashboard_id`, `lakebase_*`.
+**Context spine (the objects every step reads, in order):**
+- `docs/design_prd.md` — **authored earlier in the journey** by the `prd_generation` step from the
+  selected use case. Carries personas, *User Journeys*, scope, and *High-Level Data Entities*. The
+  Genie track **reads it first** and does not re-ask what it already answers.
+- `docs/genie_brief.md` — **extends** the PRD with the measures layer: function, ≤5 measures,
+  one-sentence definitions, source-of-truth table/column, grain, owner, definition conflicts, the
+  questions users actually ask, and the target tables. Seeded from the PRD + any BYO context.
+- `.vibecoding-state.md` captured vars — `catalog`, `schema`/`gold_schema` (from the structured
+  `LakehouseParams` entry), Metric View names, `genie_space_id`, `warehouse_id`, `dashboard_id`,
+  `lakebase_*`.
+
+**Structured input & BYO context (feed the spine):**
+- **Structured schema location** — the entry card reuses the app's `LakehouseParams` API
+  (`getLakehouseParams` / `updateLakehouseParams` / `autoSetLakehouseParamsFromLakebase`) and the
+  `chapter_3_lakehouse_catalog` / `chapter_3_lakehouse_schema` session params; prompt templates pull
+  them in by variable (as `22-genie_silver_metadata.md` already does).
+- **BYO context, lane A (app-side)** — Excel / PDF / dashboard screenshots ingested through the
+  existing FM-API attachment flow (`useCaseBuilderStream` `text_attachments` / `pdf_attachments` /
+  `images`; `processMetadataCsvStream` for CSV) → candidate definitions written into the brief.
+- **BYO context, lane B (Genie Code)** — native `/importBI` for `.twb/.twbx/.pbit` → Metric Views
+  directly, surfaced as "Path A" in the Draft-Metric-View step.
 
 This spine is how interactivity survives across steps and across **new Genie Code chat threads**:
-each step re-reads the brief and the state file, so the agent always knows what the user decided
-several steps ago.
+each step re-reads the PRD, the brief, and the state file, so the agent always knows what the user
+decided several steps ago.
 
 ---
 
@@ -90,34 +134,50 @@ several steps ago.
 The acceptance gate for each step **is the test** — "done" means the gate passes on a live Genie
 Code run. The section format already carries a `Gate` and `Expected Output`; we author those first.
 
-| # | Step (app card) | Bucket | Reuses tag | Genie Code prompt (Elicit→Propose→Build) | Built-in leaned on | We wrap | **Acceptance gate** |
+Steps are grouped into **chapters** so the finer, deck-sized beats read as a coherent flow in the
+runner rather than a flat list. Each numbered row is its own `section_tag` / prompt (its own
+interactive beat), aligned to the deck's original prompt chunking (Ex1–Ex3).
+
+| # | Step (app card) | Chapter | Reuses tag | Genie Code prompt (Elicit→Propose→Build) | Built-in leaned on | We wrap | **Acceptance gate** |
 |---|---|---|---|---|---|---|---|
-| 0 | **Define Intent** | on-ramp (app) | `usecase_selection` | *App-side*: function, industry, voice input | — (app) | use-case machinery | Intent captured |
-| 1 | **Data + Measures Brief** | Core | `prd_generation` + `genie_silver_metadata` | "Where's your data? Interview me on ≤5 measures, sources, conflicts, user questions." → writes `genie_brief.md`, profiles schema, produces ERD. *If no data → offers synthetic Bronze.* | schema analysis, Faker | adaptive-profiling + synthetic-data wrap | `genie_brief.md` exists; ≤5 measures each with definition + source + owner; ERD produced; schema-supportability noted; user approved |
-| 2 | **Metric Views** | Core | *(new; split from `genie_space`)* | Per measure: propose YAML (grain, `MEASURE()`, synonyms ≥3, non-additive flag) → review → author natively | `using-metric-views` | best-practice checklist + validation | Each brief measure → 1 Metric View live; `MEASURE()` query returns; synonyms present; non-additive flagged |
-| 3 | **Genie Agent** | Core | `genie_space` | Propose ≥10 benchmarks from brief (user corrects *expected answers*) + lean instructions ≤20 lines → create space | partial native | `serialized_space` contract + export/import (existing skill) | Space live; ≥10 benchmarks w/ SQL; MVs under `data_sources.metric_views`; `sql_functions` per TVF; runs a real question correctly |
-| 4 | **Validate & Iterate** | Core | `optimize_genie` | Run benchmarks → read failures → map each to a curation fix (failure→fix table) | native + optimize | existing skill | Benchmarks run; failures triaged to specific curation actions; accuracy reported (target is *guidance*, see §11 Q5) |
-| 5 | **Dashboard** | Core | `aibi_dashboard` | AI/BI dashboard on the Metric Views | AI/BI native | thin pointer | Dashboard live; tiles query Metric Views |
+| 0 | **Define Intent** | on-ramp (app) | `usecase_selection` → `prd_generation` | *App-side*: function, industry, voice input; PRD authored to `docs/design_prd.md` | — (app) | use-case + PRD machinery | Intent captured; `docs/design_prd.md` exists |
+| 1 | **Locate Data & Bring Context** | Discover | `genie_silver_metadata` + `LakehouseParams` | *App-side structured input*: pick `catalog.schema` (or "no data → synthetic"); optionally attach Excel/PDF/dashboard exports. *Genie Code*: "Read `docs/design_prd.md`; confirm the data location I captured; seed the brief." | schema listing, Faker, FM-API attachment ingestion | structured-input reuse + synthetic wrap + BYO ingestion | `catalog.schema` saved to session `LakehouseParams` (or synthetic branch chosen); `design_prd.md` read; `genie_brief.md` seeded from PRD + any BYO context |
+| 2 | **Profile Schema** | Discover | `genie_silver_metadata` | "Profile `<catalog>.<schema>`; produce an ERD; tell me what the schema can support today." (deck Ex1) | schema analysis | interview scaffold + brief format | ERD produced; schema-supportability noted in the brief |
+| 3 | **Measures Analysis** *(new gate)* | Discover | *(new)* | "From the profile + PRD + my BYO context, draft a measures table — definition, source-of-truth, grain, owner, cross-team conflicts. Review with me. **No YAML yet.**" | FM-API draft (app pre-fills) | measures-analysis gate | Reviewed measures table in `genie_brief.md`; ≤5 measures each w/ definition + source + grain + owner; conflicts written; **user signs off before any Metric View YAML** |
+| 4 | **Draft Metric View** | Semantic | *(split from `genie_space`)* | Per approved measure: propose YAML (grain, `MEASURE()`, non-additive flag) → review → author natively. **Path A:** `/importBI` a Tableau/PBI file to seed the MV. (deck Ex2·1) | `using-metric-views` + `/importBI` | best-practice checklist + validation | Each approved measure → 1 Metric View live; `MEASURE()` query returns; non-additive flagged |
+| 5 | **Add Synonyms** | Semantic | *(split)* | "Add ≥3 synonyms per measure/dimension from my users' real vocabulary." (deck Ex2·2) | `using-metric-views` | synonym-coverage checklist | ≥3 synonyms present per measure/key dimension |
+| 6 | **Add Verified Queries** | Semantic | *(split)* | "Add the example queries this Metric View should reliably answer." (deck Ex2·3) | SQL | verified-query checklist | Verified example queries attached; each returns |
+| 7 | **Describe the Agent** | Agent | `genie_space` | "Describe the agent's job + scope in plain language; attach the Metric Views." (deck Ex3·1) | partial native | `serialized_space` contract + export/import (existing skill) | Space scaffold w/ description; MVs under `data_sources.metric_views`; `sql_functions` per TVF |
+| 8 | **Author Instructions** | Agent | `genie_space` | "Write lean instructions ≤20 lines; climb the trust stack — context over rules." (deck Ex3·2) | native | instruction-budget checklist | Instructions ≤20 lines; no redundant/contradictory rules |
+| 9 | **Draft Benchmarks** | Agent | `genie_space` | "Propose ≥10 benchmark questions from the brief; I correct the *expected answers*." → finalize space (deck Ex3·3) | partial native | benchmark gate + generation prompt | Space live; ≥10 benchmarks w/ SQL; runs a real question correctly |
+| 10 | **Validate & Iterate** | Validate | `optimize_genie` | Run benchmarks → read failures → map each to a curation fix (failure→fix table) | native + optimize | existing skill | Benchmarks run; failures triaged to specific curation actions; accuracy reported (target is *guidance*, see §11 Q5) |
+| 11 | **Dashboard** | Output | `aibi_dashboard` | AI/BI dashboard on the Metric Views | AI/BI native | thin pointer | Dashboard live; tiles query Metric Views |
 | — | *seam: handoff recap + "+ Activate" invitation* | | | *Agent emits recap from captured vars; app offers the continuation* | | | Core track complete (a satisfying stop) |
-| 6 | **Productionize as Asset Bundle** | Advanced (optional) | bundle skills (existing) | Wrap the already-authored files into a runnable DAB; `bundle validate`; run once in dev | — | bundle persistence | `databricks.yml` + resource jobs exist; `bundle validate` passes; jobs ran once in dev; live assets reproduce from files |
-| 7 | **Synced Tables → Lakebase** | Activation (optional) | `activation_table_design`, `activation_reverse_sync`, `setup_lakebase` | Plan + create synced tables from the curated schema | ❌ not native | activation (existing) | Synced tables live in Lakebase |
-| 8 | **Visualization App** | Activation (optional) | `activation_app_design`, `activation_build_wire`, `activation_wire_lakebase`, `activation_deploy_validate` | AppKit app over Lakebase; embeds Genie/dashboard | ❌ not native | AppKit reuse (existing) | App deployed & serving |
+| 12 | **Productionize as Asset Bundle** | Advanced (optional) | bundle skills (existing) | Wrap the already-authored files into a runnable DAB; `bundle validate`; run once in dev | — | bundle persistence | `databricks.yml` + resource jobs exist; `bundle validate` passes; jobs ran once in dev; live assets reproduce from files |
+| 13 | **Synced Tables → Lakebase** | Activation (optional) | `activation_table_design`, `activation_reverse_sync`, `setup_lakebase` | Plan + create synced tables from the curated schema | ❌ not native | activation (existing) | Synced tables live in Lakebase |
+| 14 | **Visualization App** | Activation (optional) | `activation_app_design`, `activation_build_wire`, `activation_wire_lakebase`, `activation_deploy_validate` | AppKit app over Lakebase; embeds Genie/dashboard | ❌ not native | AppKit reuse (existing) | App deployed & serving |
 | C | **Clean Up** | close | `workspace_cleanup` | Tear down workshop resources | — | existing | Resources removed |
 
+**Granularity note (r2):** steps 4–6 (Metric View draft / synonyms / verified queries) and 7–9
+(describe / instructions / benchmarks) are deliberately **separate beats**, mirroring the deck's
+Exercise 2 and Exercise 3 prompt chunking. The runner groups them under the **Semantic** and
+**Agent** chapters so the nav stays legible while each beat keeps its own copy-able prompt. We are
+adding interactivity + context to those deck prompts — not condensing them.
+
 **Retirement note (Q2):** the current `genie-accelerator` step set
-(`22 → 11 → 14 → 23 → 15 → 17 → 24 → 25`) is **retired and replaced** by the new 0–8 + Cleanup list
+(`22 → 11 → 14 → 23 → 15 → 17 → 24 → 25`) is **retired and replaced** by the new 0–14 + Cleanup list
 above. To avoid a broken half-state (see §10), the replacement ships as a `beta` level *beside* the
 current one until Phase 4 passes, then flips to `enabled` and the old set is removed.
 
-**Ordering note:** Validate (4) sits right after Genie Agent (3) — it is agent-specific and is the
-deck's "benchmark then believe" climax — with Dashboard (5) as the first tangible
-"beyond-the-agent" output before the seam. The 4↔5 order is easily swappable (show the dashboard
+**Ordering note:** Validate (10) sits right after the agent beats (7–9) — it is agent-specific and
+is the deck's "benchmark then believe" climax — with Dashboard (11) as the first tangible
+"beyond-the-agent" output before the seam. The 10↔11 order is easily swappable (show the dashboard
 before validating) if that reads better in testing.
 
-**Split note (Q1):** Metric Views (2) and Genie Agent (3) are **separate cards**. The current
+**Split note (Q1):** the Semantic (4–6) and Agent (7–9) chapters are **separate cards**. The current
 `genie_space` fork's "hybrid author → extract → bundle" logic is split accordingly: the
-*author + native-apply* half stays in steps 2–3 (fast dev loop); the *bundle-persist* half moves
-into step 6 (Productionize) — see §6.
+*author + native-apply* half stays in the core chapters (fast dev loop); the *bundle-persist* half
+moves into step 12 (Productionize) — see §6.
 
 ---
 
@@ -146,25 +206,35 @@ On approval, build it — using your native <skill> capability — and:
   interactivity. The "propose, then STOP for approval" gate is taken directly from the deck's
   repeated "ask for findings before artifacts" pattern.
 
-### Worked example — Step 1 (Data + Measures Brief)
+### Worked example — Step 1 (Locate Data & Bring Context)
+
+The `catalog.schema` and any attachments are captured **app-side** (structured `LakehouseParams`
+input + FM-API attachment ingestion) *before* this prompt runs, so the prompt arrives templated:
 
 ```
-I want a Genie agent that answers questions about <function> from data I already have.
+Read docs/design_prd.md first — reuse its User Journeys and High-Level Data Entities;
+don't re-ask what it already answers.
 
-First: where does that data live? If I don't have it yet, offer to generate realistic
-sample data for <function> and tell me the tradeoff.
+My data is in <catalog>.<schema>. (If I said I have none, offer to generate realistic
+sample data for <function> and tell me the tradeoff.)
 
-Then interview me — one question at a time, wait for each answer:
- 1. What decisions do you make each week from this data?
- 2. Which 3–5 measures do you check most? Stop me at five.
- 3. For each: one-sentence definition, and which table/file is the source of truth?
- 4. Where might two teams define the same measure differently?
- 5. What do users actually ask, in their words?
+I've attached my current definitions (an Excel glossary / a dashboard export). Pull the
+measure names and definitions you can from them.
 
-Then write docs/genie_brief.md, profile <catalog>.<schema>, produce an ERD, and tell me
-which measures the schema can support today. Do NOT create Metric Views or a Genie space
-yet — show me the brief and findings for review.
+Then, only for what the PRD + attachments don't cover, interview me — one question at a
+time, wait for each answer:
+ 1. Which 3–5 measures do you check most? Stop me at five.
+ 2. For each: one-sentence definition, and which table/column is the source of truth?
+ 3. Where might two teams define the same measure differently?
+
+Write/extend docs/genie_brief.md from the PRD + attachments + my answers. Do NOT create
+Metric Views or a Genie space yet — show me the seeded brief for review.
 ```
+
+Step 2 (Profile Schema) and Step 3 (Measures Analysis) then follow as their own beats — profiling
+produces the ERD, and Measures Analysis produces the **reviewed measures table that gates all Metric
+View YAML** (deck Ex1 "inventory" split out from Ex2 "author"). Steps 4–6 and 7–9 each carry one
+deck prompt apiece.
 
 ---
 
@@ -172,29 +242,33 @@ yet — show me the brief and findings for review.
 
 | Capability | Genie Code native | Our contribution |
 |---|---|---|
+| Structured schema-location input | — (app) | **Reuse `LakehouseParams` + `chapter_3_lakehouse_*`** so prompts template the real `catalog.schema` |
+| BYO context: Excel / PDF / dashboard exports | — (app) | **Reuse FM-API attachment flow** (`useCaseBuilderStream`, `processMetadataCsvStream`) → seed definitions into the brief |
+| BYO context: Tableau / Power BI files | ✅ `/importBI` | Surface `/importBI` as "Path A" in the Draft-Metric-View step; point to `genie-space-patterns` / export-import skills |
 | Schema profiling / ERD | ✅ | Interview scaffold + brief format |
+| Measures analysis (inventory before YAML) | — | **New gate**: reviewed measures table (definition, source-of-truth, grain, owner, conflicts); FM API pre-fills, user signs off before any MV YAML |
 | Metric View authoring | ✅ `using-metric-views` | Best-practice checklist (`MEASURE()`, synonyms, non-additive, format types) |
 | TVFs | ✅ SQL | STRING-param / Genie-compat checklist (existing skill as CI reference) |
 | Genie space create | ⚠️ shell only | `serialized_space` contract + export/import API (**existing skill**) |
 | Benchmarks | ⚠️ | "answers are a guess — you verify" gate + generation prompt |
 | AI/BI dashboard | ✅ | Thin pointer to Metric Views |
 | Synced tables / Lakebase / App | ❌ | **Reuse existing Activation + AppKit sections** |
-| Productionize as DAB (repeatable) | ❌ | Existing bundle skills — **optional step 6** |
+| Productionize as DAB (repeatable) | ❌ | Existing bundle skills — **optional step 12** |
 
 **Dev-files-vs-prod-bundle boundary (Q3).** The core build steps and the productionize add-on draw
 a clean line:
 
-- **Core (steps 2–5): native-first, fast dev loop.** Artifacts are authored as **files** in the
+- **Core (steps 4–11): native-first, fast dev loop.** Artifacts are authored as **files** in the
   user project (`.sql` for TVFs, `.yaml` for Metric Views, `serialized_space` JSON for the Genie
   space) and applied with Genie Code's native tools. Nothing is a true *orphan* (a live asset with
   no file behind it) — the definitions are version-controllable files — but we do **not** pay the
   bundle/job tax yet. The point of the core is momentum: "see your agent answer a real question."
-- **Add-on (step 6): productionize.** Wrap those already-authored files into a runnable **Asset
+- **Add-on (step 12): productionize.** Wrap those already-authored files into a runnable **Asset
   Bundle** (`databricks.yml` + resource jobs), run `bundle validate`, and run the jobs once in dev.
   The semantic layer is now **reproducible and promotable** to staging/prod by `bundle deploy`
   alone.
 
-**Placement & gating.** Step 6 sits **between** the core track and the Activation section, because
+**Placement & gating.** Step 12 sits **between** the core track and the Activation section, because
 activation ("serve this for real") is the natural moment to want reproducibility first. It is a
 **soft recommendation, not a hard prerequisite**: a user can technically sync + build the app on
 the dev-applied assets, so the runner *strongly suggests* Productionize before Activation (and the
@@ -210,11 +284,13 @@ runner surfaces.
 | Deck concept | Lands on | App surface |
 |---|---|---|
 | Curation > model; trust stack (8 levels) | Track intro + persistent sidebar | Interactive **trust-stack visual**, "you are here" |
-| Metrics discovery / start small / source-of-truth | Step 1 | How-it-works panel + brief-completion tracker |
-| Why `MEASURE()` isn't optional; non-additive | Step 2 | Before/after "silent wrong number" callout |
-| Synonyms = retrieval; OntoRank ties | Steps 2–3 | Synonym-coverage explainer |
-| Lean instructions / rich context; climbing the trust stack | Step 3 | Instruction-budget explainer |
-| Benchmarks; "failures are the to-do list"; failure→fix table | Step 4 | Interactive failure→fix table |
+| Bring your context (Excel / Tableau / PBI → definitions) | Step 1 | BYO-context uploader + `/importBI` explainer |
+| Metrics discovery / start small / source-of-truth | Steps 1–2 | How-it-works panel + brief-completion tracker |
+| Measure inventory before you model (analysis ≠ authoring) | Step 3 | **Measures-analysis table** (reviewed, gates YAML) |
+| Why `MEASURE()` isn't optional; non-additive | Step 4 | Before/after "silent wrong number" callout |
+| Synonyms = retrieval; OntoRank ties | Steps 5, 7–9 | Synonym-coverage explainer |
+| Lean instructions / rich context; climbing the trust stack | Step 8 | Instruction-budget explainer |
+| Benchmarks; "failures are the to-do list"; failure→fix table | Steps 9–10 | Interactive failure→fix table |
 | Pages / Domains / Routing + Auto-Optimize | Track outro | "Next steps beyond Genie Code" (manual, Genie One) |
 
 ---
@@ -267,15 +343,20 @@ pipeline, app cards, how-it-works) is plumbing. So we front-load the risky valid
 in a broken half-state.
 
 - **Phase 0 — this spec, signed off.** Per-step gates (§4) are the tests.
-- **Phase 1 — prove prompts on live Genie Code (a cheap spike).** Run the draft interview prompts
-  for steps 1–5 by hand against **two representative schemas** — one with a clean Gold layer, one
-  raw/needs-synthetic (exercises the adaptive gate). Iterate the text until each reliably
+- **Phase 1 — prove prompts on live Genie Code (a cheap spike).** Run the draft prompts for the
+  core steps (1–11) by hand against **two representative schemas** — one with a clean Gold layer, one
+  raw/needs-synthetic (exercises the adaptive gate) — and exercise **both BYO-context lanes** (an
+  attachment upload and a `/importBI` file) at least once. Iterate the text until each reliably
   (a) triggers the interview, (b) produces the artifact, (c) passes its gate. **Save the resulting
   Genie Code transcripts as golden references.** This de-risks ~80% of the project for ~a day.
 - **Phase 2 — encode into the source-of-truth format, behind existing tooling.** Only now write the
   proven prompts into the section `.md` / `.genie-code.md` files. Run `lint_section_prompts.py`, the
-  contract/baseline extractors, and the seed round-trip. **Isolate the track** with its own section
-  tags so the other ~14 levels can't regress; capture a contract baseline of the *before* state.
+  contract/baseline extractors, and the seed round-trip. Add **`scripts/verify_genie_track_flow.py`**
+  — a CUJ verifier mirroring `scripts/verify_agent_track_flow.py`: it asserts the new ordered
+  `section_tag` set, each row's `order_number`, key in-prompt content (e.g. Measures Analysis gates
+  before MV YAML; Step 1 reads `design_prd.md`), and that the retired step set is gone. **Isolate the
+  track** with its own section tags so the other ~14 levels can't regress; capture a contract
+  baseline of the *before* state.
 - **Phase 3 — app wiring, incrementally, additive.** Update `workflowSections.ts` for the new step
   list, the optional `+ Activate` chain, and the how-it-works content. Ship as **`beta`** using the
   existing `AcceleratorStatus` flag *beside* the current `genie-accelerator`. Extend the Playwright
@@ -292,13 +373,14 @@ in a broken half-state.
 | Per-step | The `Gate` passes on a live Genie Code run | ✅ gate pattern in sections |
 | Per-step | Golden transcript matches expected behavior | New (Phase 1 artifact) |
 | Prompt source | `lint_section_prompts.py` + contract baseline diff + seed round-trip | ✅ tooling in `apps_lakebase/prompts/` |
+| Flow / CUJ | `verify_genie_track_flow.py` asserts the ordered step set + gates | New (mirrors `verify_agent_track_flow.py`) |
 | App | Playwright e2e walks the track | ✅ e2e harness exists |
 | Whole | Two independent full dogfood passes | New (Phase 4) |
 
 ### Shippable increments (no broken half-state)
 
-1. Core arc (steps 1–5) fully validated and live first.
-2. Activation module (steps 6–8) added as a second validated increment.
+1. Core arc (steps 1–11) fully validated and live first.
+2. Activation module (steps 12–14) added as a second validated increment.
 
 Additive + flagged: the new track lives beside the old under `beta` until Phase 4 passes, so `main`
 is never broken for the other levels.
@@ -309,22 +391,35 @@ is never broken for the other levels.
 
 | # | Question | Decision |
 |---|---|---|
-| Q1 | Split Metric Views from Genie Agent, or keep the bundled `genie_space` step? | **Split** into separate cards (steps 2 and 3). The `genie_space` fork's persistence logic splits too: author + native-apply in 2–3, bundle-persist in step 6. |
+| Q1 | Split Metric Views from Genie Agent, or keep the bundled `genie_space` step? | **Split** into separate chapters (Semantic = steps 4–6, Agent = steps 7–9). The `genie_space` fork's persistence logic splits too: author + native-apply in the core chapters, bundle-persist in step 12. |
 | Q2 | Retire the current `genie-accelerator` step set or add the revamp beside it? | **Retire and replace.** Ship the replacement as `beta` beside the current one until Phase 4, then remove the old set. |
-| Q3 | Is DAB persistence part of the default track or an add-on? | **Optional "advanced/production" add-on (step 6)**, placed between the core track and Activation, soft-recommended before serving to users. See the dev-files-vs-prod-bundle boundary in §6. |
+| Q3 | Is DAB persistence part of the default track or an add-on? | **Optional "advanced/production" add-on (step 12)**, placed between the core track and Activation, soft-recommended before serving to users. See the dev-files-vs-prod-bundle boundary in §6. |
 | Q4 | Minimum synthetic-data path — reuse Faker or build a lighter variant? | **Reuse `bronze_layer_creation`/Faker as-is** for the synthetic path. |
 | Q5 | Benchmark accuracy target — hard gate or guidance? | **Guidance** (deck's "aim ~85%, don't chase 100%"). The Validate gate requires benchmarks to run and failures to be triaged, not a specific accuracy number. |
+| Q6 | How granular should the prompts be? | **Deck-sized chunks, not condensed.** Each deck prompt (Ex2 draft/synonyms/verified; Ex3 describe/instructions/benchmarks) is its own beat, grouped under the Semantic and Agent chapters. Interactivity + context are added *to* those prompts. |
+| Q7 | Is `genie_brief.md` the PRD, or downstream of it? | **Downstream.** `genie_brief.md` **extends** the `prd_generation`-authored `docs/design_prd.md` (reuses its User Journeys + High-Level Data Entities); Step 1 reads the PRD first. |
+| Q8 | How is the data location captured? | **Structured, app-side.** Reuse `LakehouseParams` + `chapter_3_lakehouse_*`; prompts template the real `catalog.schema`. A "no data → synthetic" toggle routes to Faker. |
+| Q9 | How do users bring existing definitions? | **Two lanes.** App-side attachments (Excel/PDF/dashboard exports) via the FM-API attachment flow → brief; Genie Code native `/importBI` (Tableau/PBI) → Metric Views (Path A in the Draft-MV step). |
 
 ---
 
 ## 12. Related assets & references
 
-- Workshop deck: "Genie in a Bottle — Hands-on Workshop" (curation philosophy, trust stack).
+- Workshop deck: "Genie in a Bottle — Hands-on Workshop" (curation philosophy, trust stack,
+  Ex1–Ex3 prompt chunking, `/importBI` Path A).
 - App: `vibe-coding-workshop-app` — `src/constants/workflowSections.ts` (`genie-accelerator` level,
   `PROGRESSION_CHAINS`, `getCumulativeOverrides`, `AcceleratorStatus`), use-case/PRD steps, voice
   input, `WorkflowDiagram`/`ArchitectureDiagram`/`GalaxyMap`.
+- App structured input & FM-API surfaces (`src/api/client.ts`): `LakehouseParams` +
+  `getLakehouseParams`/`updateLakehouseParams`/`autoSetLakehouseParamsFromLakebase` (structured
+  schema location); `useCaseBuilderStream` (`text_attachments`/`pdf_attachments`/`images`) and
+  `processMetadataCsvStream` (BYO-context ingestion via FM API); `generatePromptStream` (per-step
+  personalization). Param mapping in `src/constants/workshopParamCategories.ts`.
+- PRD spine: `apps_lakebase/prompts/sections/03-prd_generation.md` → `docs/design_prd.md`
+  (User Journeys, High-Level Data Entities).
 - Prompt system: `apps_lakebase/prompts/sections/*.md` and `*.genie-code.md` forks;
-  `02_seed_section_input_prompts.sql`; `lint_section_prompts.py`; contract/baseline extractors.
+  `02_seed_section_input_prompts.sql`; `lint_section_prompts.py`; contract/baseline extractors;
+  CUJ verifier precedent `scripts/verify_agent_track_flow.py` (→ new `verify_genie_track_flow.py`).
 - Skills: `data_product_accelerator/skills/semantic-layer/` (metric-views-patterns,
   table-valued-functions, genie-space-patterns, genie-space-export-import-api,
   genie-optimization-orchestrator); `skills/vibecoding-state`; `skills/genie-code-environment`;
@@ -334,5 +429,7 @@ is never broken for the other levels.
 
 ## 13. Next step
 
-Proceed to **Phase 1**: draft the interview prompts for steps 1–5 and validate them on live Genie
-Code against the two reference schemas (clean-Gold + raw/synthetic), saving golden transcripts.
+Proceed to **Phase 1**: draft the deck-sized prompts for the core steps (1–11) and validate them on
+live Genie Code against the two reference schemas (clean-Gold + raw/synthetic), exercising both
+BYO-context lanes (attachment + `/importBI`) and the Measures-Analysis gate, saving golden
+transcripts.
