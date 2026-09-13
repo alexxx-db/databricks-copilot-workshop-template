@@ -369,3 +369,72 @@ I cannot *be* Genie Code (it is the in-workspace agent). Two ways to run the spi
    dashboard) — so it needs your go-ahead on a target location.
 
 To start either, I need three decisions from you (below).
+
+---
+
+## Appendix A — Clean-Gold worked example (`samples.tpch`)
+
+Validated read-only on profile `fevm-serverless` (2026-09-13): the sample is reachable and is a
+clean TPC-H star. Use this as **Run A** (clean-Gold). Function = **order & revenue reporting**.
+
+**Schema (validated):**
+- **Fact:** `samples.tpch.lineitem` — grain = one order *line*. Money columns:
+  `l_extendedprice`, `l_discount`, `l_tax`, `l_quantity`. Ships: `l_shipdate`, `l_shipmode`,
+  `l_returnflag`.
+- **`samples.tpch.orders`** — grain = one *order* (`o_orderkey`). `o_totalprice`, `o_orderdate`,
+  `o_orderpriority`, `o_orderstatus`, `o_custkey`.
+- **`samples.tpch.customer`** — `c_custkey`, `c_mktsegment`, `c_nationkey`, `c_acctbal`.
+- **Joins:** `lineitem.l_orderkey → orders.o_orderkey`; `orders.o_custkey → customer.c_custkey`;
+  `customer.c_nationkey → nation.n_nationkey → region.r_regionkey`.
+
+**Measures to use (with a deliberate conflict + a non-additive case for the gate):**
+
+| Measure | Definition (one sentence) | Source of truth | Grain | Conflict |
+|---|---|---|---|---|
+| Revenue | **Net of line discount:** `SUM(l_extendedprice * (1 - l_discount))` | `lineitem` | line | **Sales-ops reports GROSS** `SUM(l_extendedprice)` (no discount). Two numbers, same name — write both. |
+| Average Order Value | Net revenue ÷ distinct orders — **non-additive** (never average across periods) | `lineitem` + `orders` | order | — |
+| Units Sold | `SUM(l_quantity)` | `lineitem` | line | — |
+
+The **Revenue gross-vs-net** row is what Step 3's transcript must surface as a *conflict* (not
+silently pick one); **Average Order Value** is what Step 4 must flag as non-additive and Step 6/8
+must protect with `MEASURE()`.
+
+**Filled Step 2 (Profile) — paste into Genie Code (tag `@samples.tpch` first):**
+
+```
+Read docs/genie_brief.md first.
+
+@samples.tpch holds the tables behind our order & revenue reporting.
+
+Review this schema and report back on:
+- What each table contains and its grain (lineitem vs orders especially)
+- How the tables join, and any primary/foreign key candidates
+- Which columns carry business meaning not obvious from the name (e.g. l_returnflag, o_orderstatus)
+- Which of these measures the schema can support today: Revenue, Average Order Value, Units Sold
+
+Produce an ERD. Do not create anything yet. Report your findings so I can review them.
+```
+
+**Filled Step 3 (Measures Analysis gate) — paste next:**
+
+```
+Read docs/genie_brief.md (the profile) first.
+
+Draft my measure inventory as a table: Measure | Current definition | Source of truth | Grain |
+Owner | Conflict.
+
+Seed it with: Revenue, Average Order Value, Units Sold. For Revenue, note that gross
+(SUM(l_extendedprice)) and net (SUM(l_extendedprice*(1-l_discount))) both circulate — write BOTH in
+the Conflict column; the conflict is the finding. Flag Average Order Value as non-additive. Mark any
+measure I haven't named an owner for as "unowned".
+
+STOP and show me the table. Do NOT write any Metric View YAML until I sign off.
+```
+
+**Then** Step 4 Path B drafts the Metric View for the two signed-off measures (Revenue net + Average
+Order Value), with Average Order Value flagged non-additive — exactly the deck's "why `MEASURE()`
+isn't optional" demonstration, on real numbers.
+
+**Run B (raw/synthetic):** at Step 1 choose the synthetic toggle → Faker generates a small
+`<catalog>.<schema>` for `<function>`; the remaining steps are identical. Exercise BYO **lane B**
+here by running `/importBI` on a Tableau/PBI file at Step 4 Path A.
