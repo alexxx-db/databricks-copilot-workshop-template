@@ -30,6 +30,21 @@ override only `input_template` / `system_prompt` / `bypass_llm` for `coding_assi
 Use a fork where the Genie Code surface needs **navigation guidance** the generic (Cursor/Copilot)
 prompt shouldn't carry. Shared fields are always read from the DEFAULT row.
 
+**Authoring workflow (source of truth = the `.md` section files):** edit/author
+`sections/NN-<tag>.md`, then run **`apps_lakebase/prompts/sync_markdown_to_seed.py`** to regenerate
+the matching INSERT(s) in `02_seed_section_input_prompts.sql` (`extract_to_markdown.py` is the
+reverse direction; `sections/README.md` is an auto-generated index — don't hand-edit it). So a batch =
+author `.md` files → run the sync → review the seed diff → `lint_section_prompts.py`.
+
+> **Existing Genie-Accelerator band (sections 22–25) — review before authoring.** The app already
+> ships a partial Genie-Accelerator flow: `genie_gold_design` (23, "Gold Layer Design (Genie
+> Accelerator)"), `deploy_lakehouse_assets` (23), **`deploy_di_assets` (24, "Deploy Semantic Layer
+> Assets (TVFs → Metric Views → Genie → Dashboard)")**, and `optimize_genie` (25). These are **deploy**
+> steps (they push pre-planned assets), **not** the interactive *design* beats this track adds
+> (Measures gate, Metric View authoring, synonyms review). The new **Semantic Layer** section is the
+> *design* front-end that feeds these deploy steps — author it to hand off cleanly, and **reuse
+> `optimize_genie` (25)** as the Step-10 optimize home rather than duplicating it.
+
 **Runtime variables** already substituted by the app (reuse these; don't invent parallels):
 `{industry_name}`, `{use_case_title}`, `{use_case_description}`, `{lakehouse_default_catalog}`,
 `{default_warehouse}`, `{prd_document}`, `{table_metadata}`, `{use_case_slug}`, `{databricks_cli_profile}`, …
@@ -40,82 +55,105 @@ prompt shouldn't carry. Shared fields are always read from the DEFAULT row.
 
 ---
 
-## 2. Step → section mapping (the 18-step track)
+## 2. Step → section mapping (RESOLVED placement)
+
+**Decision (2026-09-13):** *"Put domains, sub-domains, pages into a new track for **Genie Ontology**.
+Spread the rest between Genie Space, Optimize Genie, AI/BI Dashboard, Activate, etc. For Metric Views
+/ Measures, review if there's an existing semantic-layer section — there isn't — so **create a new
+Semantic Layer section** and put them there."*
+
+Verified against the seed: **no** semantic-layer section exists today (Metric Views appear only inside
+`usecase_plan` and `aibi_dashboard`); `genie_space`, `optimize_genie`, `aibi_dashboard`, and
+`activation_*` all exist and are reused/enhanced in place.
 
 Type → `bypass_llm`: **A = false** (FM-API generates), **B/C = true** (verbatim template).
-"Fork?" = does it need a `genie-code` navigation fork on top of the DEFAULT row?
+"Fork?" = needs a `genie-code` navigation fork on top of the DEFAULT row.
 
-| Step | section_tag (proposed) | Type→`bypass_llm` | Fork? | Reuse / New | Binds to (skill) |
-|---|---|---|---|---|---|
-| 0 PRD | `prd_generation` *(existing)* | A → false | no | **REUSE** `03-prd_generation.md` | — |
-| 1 Locate + BYO | `genieaccel_locate` | C → true | yes (file-drop, synthetic toggle) | NEW | `LakehouseParams`, Faker |
-| 2 Profile | `genieaccel_profile` | B → true | no | NEW | `databricks-data-discovery` |
-| 3 Measures gate | `genieaccel_measures` | B/C → true | no | NEW | design spec §4 gate |
-| 4 Draft Metric View | `genieaccel_metric_view` | B/C → true | yes (`/importBI` Path A) | NEW | `using-metric-views`, `/importBI` |
-| 5 Synonyms | `genieaccel_synonyms` | B → true | no | NEW | `using-metric-views` |
-| 6 Describe agent | `genieaccel_agent_describe` | B → true | yes (createAsset/PATCH surface) | NEW | `03-genie-space-patterns` |
-| 7 Instructions | `genieaccel_agent_instructions` | B → true | no | NEW | `03-genie-space-patterns` |
-| 8 Verified queries | `genieaccel_verified_queries` | B → true | no | NEW | `03-genie-space-patterns` |
-| 9 Load benchmarks | `genieaccel_benchmarks` | B → true | no | NEW | `03-genie-space-patterns` Rule 12 |
-| 10 **Optimize loop** | `genieaccel_optimize` | B → true | yes (Conversation API run) | NEW *(cf. existing `optimize_genie`)* | `03-genie-space-patterns` Rule 17 |
-| 11 Domain + subdomains | `genieaccel_domain` | B → true | yes (**Discover UI preferred** + pre-created fallback) | NEW | *(skill gap)* |
-| 12 Author Pages | `genieaccel_pages` | B/C → true | yes (Discover UI Page editor) | NEW | *(skill gap)* |
-| 13 Routing Page | `genieaccel_routing` | B → true | yes (Discover UI) | NEW | *(skill gap)* |
-| 14 Share | `genieaccel_share` | B → true | no | NEW | — |
-| 15 Dashboard *(tail)* | `genieaccel_dashboard` | B → true | yes (canvas navigation) | NEW *(cf. `aibi_dashboard`)* | AI/BI native |
-| 16 Synced→Lakebase→App *(tail)* | `genieaccel_activation` | B → true | yes | NEW *(cf. `activation_*`)* | `databricks-lakebase`, `apps_lakebase` |
-| 17 Productionize DAB *(tail)* | `genieaccel_dab` | B → true | yes (bundle-editor page) | NEW | `databricks-asset-bundles` |
+| Step | section_tag | Home | Type→`bypass_llm` | Fork? | New / Reuse | Binds to (skill) |
+|---|---|---|---|---|---|---|
+| 0 PRD | `prd_generation` | *(existing)* | A → false | no | **REUSE** unchanged | — |
+| 1 Locate + BYO | `semlayer_locate` | **Semantic Layer (NEW)** | C → true | yes (file-drop, synthetic toggle) | NEW | `LakehouseParams`, Faker |
+| 2 Profile | `semlayer_profile` | **Semantic Layer (NEW)** | B → true | no | NEW | `databricks-data-discovery` |
+| 3 Measures gate | `semlayer_measures` | **Semantic Layer (NEW)** | B/C → true | no | NEW | design spec §4 gate |
+| 4 Draft Metric View | `semlayer_metric_view` | **Semantic Layer (NEW)** | B/C → true | yes (`/importBI` Path A) | NEW | `using-metric-views`, `/importBI` |
+| 5 Synonyms | `semlayer_synonyms` | **Semantic Layer (NEW)** | B → true | no | NEW | `using-metric-views` |
+| 6 Describe agent | `genie_space` | **Genie Space (reuse)** | B → true | yes (createAsset/PATCH) | ENHANCE | `03-genie-space-patterns` |
+| 7 Instructions | `genie_space` | **Genie Space (reuse)** | B → true | no | ENHANCE | `03-genie-space-patterns` |
+| 8 Verified queries | `genie_space` | **Genie Space (reuse)** | B → true | no | ENHANCE | `03-genie-space-patterns` |
+| 9 Load benchmarks | `genie_space` | **Genie Space (reuse)** | B → true | no | ENHANCE | `03-genie-space-patterns` Rule 12 |
+| 10 **Optimize loop** | `optimize_genie` | **Optimize Genie (reuse)** | B → true | yes (Conversation API run) | ENHANCE | `03-genie-space-patterns` Rule 17 |
+| 11 Domain + subdomains | `ontology_domain` | **Genie Ontology (NEW track)** | B → true | yes (**Discover UI preferred** + pre-created fallback) | NEW | *(skill gap)* |
+| 12 Author Pages | `ontology_pages` | **Genie Ontology (NEW track)** | B/C → true | yes (Discover UI Page editor) | NEW | *(skill gap)* |
+| 13 Routing Page | `ontology_routing` | **Genie Ontology (NEW track)** | B → true | yes (Discover UI) | NEW | *(skill gap)* |
+| 14 Share | `genie_space` (close) | **Genie Space (reuse)** | B → true | no | ENHANCE | — |
+| 15 Dashboard *(tail)* | `aibi_dashboard` | **AI/BI Dashboard (reuse)** | B → true | yes (canvas nav) | ENHANCE | AI/BI native |
+| 16 Synced→Lakebase→App *(tail)* | `activation_*` | **Activation (reuse)** | B → true | yes | ENHANCE | `databricks-lakebase`, `apps_lakebase` |
+| 17 Productionize DAB *(tail)* | `activation_*` | **Activation (reuse)** | B → true | yes (bundle-editor page) | ENHANCE | `databricks-asset-bundles` |
 
 Notes:
-- **Step 0 reuses** the shipped PRD section unchanged — the track just points at it.
-- **Steps 10/15/16 have existing cousins** (`optimize_genie`, `aibi_dashboard`, `activation_*`). Decide
-  per the fork question below whether to reuse-and-enhance those tags or ship dedicated `genieaccel_*`
-  tags for a clean, self-contained track.
-- **Forks matter most at:** 1 (file-drop/synthetic), 4 (`/importBI`), 6 (createAsset/PATCH surface),
-  10 (Conversation-API run), 11–13 (Discover UI), 15 (dashboard canvas), 17 (bundle-editor page) —
-  everywhere the Genie Code *surface/navigation* differs from a generic assistant.
+- **New content = 8 sections in two homes:** the **Semantic Layer** section (Steps 1–5) and the
+  **Genie Ontology** track (Steps 11–13). Everything else *enhances* an existing section in place.
+- **Steps 1–2 placement.** Locate + Profile are the discovery arc that *produces* the measures, so
+  they lead the Semantic Layer section. (Alternative: fold them into `gold_layer_design` — left in
+  Semantic Layer so the track reads as one "data → measures → metric view" story. Revisit if the app
+  already gates a discovery step ahead of this.)
+- **Enhance-in-place discipline.** For `genie_space` / `optimize_genie` / `aibi_dashboard` /
+  `activation_*`, layer the validated wording in as **additive** changes (append example beats /
+  genie-code forks); do not rewrite shipped prompts wholesale — diff against the Phase-1 goldens.
+- **Forks matter most at:** 1 (file-drop/synthetic), 4 (`/importBI`), 6 (createAsset/PATCH), 10
+  (Conversation-API run), 11–13 (Discover UI), 15 (dashboard canvas), 17 (bundle-editor page).
 
 ---
 
-## 3. Order-number placement
+## 3. Order-number placement (RESOLVED)
 
-The existing workflow occupies `order_number` 1–56 across five chapters. Two placement options
-(the fork decision in §5):
+Existing workflow occupies `order_number` 1–56. Placement per the decision:
 
-- **Option A — dedicated track band.** Reserve a new band (e.g. `order_number` 60–77) for
-  `genieaccel_*`, shown only when the "Genie Accelerator" track/use-case is selected (section
-  visibility gating, same mechanism the Lakebase/Lakehouse chapters already use). Clean and
-  self-contained; no risk to the existing flow.
-- **Option B — weave into existing chapters.** Enhance `gold_layer_design` / `genie_space` /
-  `optimize_genie` / `aibi_dashboard` / `activation_*` in place and add only the genuinely new
-  sections (Measures gate, Domain, Pages, Routing). Less duplication, but touches shipped content and
-  couples the track to the full 56-step flow.
+- **Semantic Layer section (Steps 1–5)** — a new section band sequenced with the data/semantic work:
+  slot it just **after Gold** and **before `genie_space`** (so measures → metric view precede the
+  agent). Candidate band `order_number` ~13.x–13.z (between `gold_layer_pipeline` and `genie_space`)
+  or a reserved 60–64 band if visibility-gating keeps it out of the full linear flow.
+- **Genie Ontology track (Steps 11–13)** — a new gated track, own band (e.g. `order_number` 70–72),
+  shown when the ontology track is selected; sequenced **after Optimize** (deck order: Ex3 optimize →
+  Ex4/Ex5 ontology).
+- **Enhanced sections (6–10, 14–17)** keep their existing `order_number`s — only `input_template` /
+  `system_prompt` / genie-code forks change.
+
+Exact numbers finalized when the section files are authored (Batch 1), matching the app's visibility-
+gating for optional chapters.
 
 ---
 
-## 4. Encoding sequence (once §5 is decided)
+## 4. Encoding sequence
 
+0. **Review the existing 22–25 band** (`genie_gold_design`, `deploy_lakehouse_assets`,
+   `deploy_di_assets`, `optimize_genie`) so the new Semantic Layer *design* beats hand off to the
+   existing *deploy* beats without duplication, and Step 10 reuses `optimize_genie`.
 1. **Add the 7 new runtime variables** to the substitution set + a second `LakehouseParams` pair
    (source vs write target) — prerequisite for every template below.
-2. **Batch 1 — Discover + Semantic (Steps 1–5):** author section files + DEFAULT INSERTs + genie-code
-   forks for Locate, Profile, Measures, Metric View, Synonyms. (Highest-value, fully Phase-1-validated.)
-3. **Batch 2 — Agent + Optimize (Steps 6–10):** Describe, Instructions, Verified queries, Benchmarks,
-   Optimize loop.
-4. **Batch 3 — Domains/Pages/Routing (Steps 11–13):** UI-preferred with pre-created fallback; carry
-   the Beta caveats into `how_to_apply`. *(Author the missing Domains/Pages skill alongside.)*
-5. **Batch 4 — Share + Activation tail (Steps 14–17):** optional-tail framing.
+2. **Batch 1 — Semantic Layer section (Steps 1–5, NEW):** author `semlayer_*` section files, run
+   `sync_markdown_to_seed.py`, add genie-code forks (Locate, Profile, Measures, Metric View,
+   Synonyms). Highest-value, fully Phase-1-validated, and the cleanest new home.
+3. **Batch 2 — Enhance Genie Space + Optimize (Steps 6–10):** additively layer Describe / Instructions
+   / Verified queries / Benchmarks into `genie_space`, and the closed optimize loop into
+   `optimize_genie` (+ Share close on `genie_space`).
+4. **Batch 3 — Genie Ontology track (Steps 11–13, NEW):** `ontology_*` sections, UI-preferred with the
+   pre-created-domain fallback; Beta caveats in `how_to_apply`. *(Author the missing Ontology skill
+   alongside — the current repo skill gap.)*
+5. **Batch 4 — Enhance Activation tail (Steps 15–17):** additive genie-code forks on `aibi_dashboard` /
+   `activation_*`.
 6. **"How it works"** content (deck-derived) for the app's explainer surface.
-7. **Regression:** re-run `run-a`/`run-b` prompts against the *app-generated* text to confirm the
-   encoded sections reproduce the validated prompts verbatim (Type B/C) or faithfully (Type A PRD).
+7. **Regression:** re-run `run-a`/`run-b` prompts against the *app-generated* text to confirm encoded
+   sections reproduce the validated prompts verbatim (Type B/C) or faithfully (Type A PRD).
 
-Each batch = section `.md` files + seed INSERTs + forks, committed together, then diffed against the
+Each batch = section `.md` files + seed INSERTs + forks, committed together, diffed against the
 Phase-1 golden transcripts in `phase1-evidence/`.
 
 ---
 
-## 5. Open decision (needs your call before Batch 1)
+## 5. Decision log
 
-**How should the track slot into the app's section workflow — Option A (dedicated `genieaccel_*` band,
-gated) or Option B (weave into existing `gold`/`genie_space`/`optimize`/`activation` sections)?**
-This determines the `section_tag` names and `order_number` band for all 17 rows, so it's the one
-thing to settle before authoring section files.
+- **2026-09-13 — placement RESOLVED (§2):** Genie Ontology = new gated track (domains/subdomains/
+  pages/routing). Semantic Layer = new section for Locate→Synonyms (Measures + Metric Views live here
+  since no semantic-layer section existed). Agent/Optimize/Dashboard/Activation = enhance the existing
+  `genie_space` / `optimize_genie` / `aibi_dashboard` / `activation_*` sections in place.
