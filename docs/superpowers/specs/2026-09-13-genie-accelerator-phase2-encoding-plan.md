@@ -176,8 +176,12 @@ Exact numbers confirmed against the app's track/visibility-gating when Batch 1 i
    extract/upload/generate mode-tab pattern; `semlayer_metric_view` (Step 4) carries the Path A
    Import-BI + promote-local→UC beat (Tab A author / Tab B Import BI). See §5 decision log for the two
    tooling findings surfaced during encoding.
-3. **Batch 2 — Genie Agent group (Steps 6–10, 14, NEW):** author `gagent_*` sections (65–69, 73):
-   Describe, Instructions, Verified queries, Benchmarks, GC-native Optimize loop, Share.
+3. **[DONE 2026-09-14] Batch 2 — Genie Agent group (Steps 6–10, 14, NEW):** authored `gagent_*`
+   sections (`order_number`/`input_id` 65–69, 73: Describe, Instructions, Verified queries, Benchmarks,
+   GC-native Optimize loop, Share) + two genie-code forks (`input_id` 934/935: Describe
+   createAsset/PATCH navigation, Optimize Conversation-API loop). All eight scoped-synced into the seed
+   and **pass `lint_section_prompts.py`**. Prompt bodies are the Phase-1-validated Steps 6–10/14
+   verbatim; Step 10 optimize is the GC-native curation loop, distinct from `optimize_genie` (25).
 4. **Batch 3 — Genie Ontology group (Steps 11–13, NEW):** `ontology_*` sections (70–72), UI-preferred
    with the pre-created-domain fallback; Beta caveats in `how_to_apply`. *(Author the missing Ontology
    skill alongside — the current repo skill gap.)*
@@ -208,6 +212,13 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
   write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
   bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — Batch 2 encoded (§4.3):** authored `sections/65–69,73-gagent_*.md` (DEFAULT,
+  `bypass_llm=true`) + `sections/99-gagent_{describe,optimize}.genie-code.md` (forks, `input_id`
+  934/935). Same token mapping and scoped-sync approach as Batch 1; parser now sees 108 blocks; all
+  eight `✅` under `lint_section_prompts.py` (0 new lint errors). Verified queries correctly land on the
+  space (`instructions.example_question_sqls`), not the Metric View; benchmarks require expected SQL per
+  item; the optimize fork uses `ask_genie` + append-only 5-mode fixes. Same gitignore caveat as Batch 1
+  (files are a working copy; canonical home = `vibe-coding-workshop-app`).
 - **2026-09-14 — TWO tooling findings surfaced during Batch 1 (action needed before Batch 2 commit):**
   1. **`apps_lakebase/prompts/` is gitignored in THIS repo** (`.gitignore:96`) — zero files tracked.
      The encoded `.md` + seed are a **working copy**; the canonical, version-controlled home is the
