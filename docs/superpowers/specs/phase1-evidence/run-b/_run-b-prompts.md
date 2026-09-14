@@ -104,6 +104,12 @@ dashboard + LOCAL (dashboard-scoped) metric views + discovered relationships**. 
 (≤100 MB direct, or a UC volume path for larger files. Docs:
 <https://docs.databricks.com/aws/en/dashboards/manage/import-bi>.)
 
+> **This run confirms the reference.** Validate each step below against
+> `semantic-layer/01-metric-views-patterns/references/import-bi-to-metric-view.md` (currently marked
+> "pending Run-B confirmation") — especially the exact **"Export to a Unity Catalog metric view"**
+> click-path and the partner-powered-AI-features prerequisite. Once confirmed live, drop that status
+> note from the reference.
+
 1. In Genie Code, run **`/importBI`** and upload your real `.twbx` / `.twb` / `.tds` / `.tdsx` / `.pbit`.
 2. Review what it produced — a dashboard + local metric view(s). **Do not promote all of them**; keep
    only the view covering your signed-off inventory (Step 3).

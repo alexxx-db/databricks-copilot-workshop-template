@@ -319,15 +319,12 @@ LANGUAGE YAML`) — runs from any workspace surface; no special page. (Extract-b
 flagged; Metric View name + gate recorded to `.vibecoding-state.md`.
 
 > **Path A (BYO, if you have a Tableau/PBI file) — surfaced as its own "Import BI" tab in Step 4.**
-> Run `/importBI` in Genie Code and upload your `.twb`/`.twbx`/`.tds`/`.tdsx` (Tableau) or `.pbit`
-> (Power BI) — ≤100 MB directly, or point at a UC volume path for larger files. **Import BI produces
-> MORE than a Metric View:** it builds an **AI/BI dashboard + LOCAL (dashboard-scoped) metric views +
-> discovered relationships**. Those local views are **not reusable by a Genie Agent** — you must
-> **promote the one(s) covering your signed-off inventory to Unity Catalog** ("Export to Metric View"
-> → `@<write_catalog>.<write_schema>`). Do **not** promote every view the import produces; keep only
-> what matches the brief. (For a clean model-only import, start `/importBI` from an empty UC metric
-> view.) Then continue at Step 5. Docs:
-> <https://docs.databricks.com/aws/en/dashboards/manage/import-bi>.
+> Run `/importBI` in Genie Code, then **promote the inventory-matching view to Unity Catalog**
+> (`@<write_catalog>.<write_schema>`). `/importBI` produces a dashboard + *local* metric views, so the
+> promote step is mandatory before a Genie Agent can attach it. Full procedure, formats/limits, exact
+> UI action, and gotchas live in the skill — don't inline them:
+> `semantic-layer/01-metric-views-patterns/references/import-bi-to-metric-view.md` (mirrored in
+> `genie-code-environment` §6c). Keep only what matches the brief, then continue at Step 5.
 
 **Path B — author from the signed-off inventory:**
 

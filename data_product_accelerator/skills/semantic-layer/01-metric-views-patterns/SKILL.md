@@ -651,6 +651,7 @@ See `scripts/create_metric_views.py` for the full working script and `references
 - **`references/requirements-template.md`** — Design template for dimensions, measures, joins
 - **`references/implementation-workflow.md`** — Step-by-step creation workflow
 - **`references/validation-queries.md`** — SQL queries for deployment verification
+- **`references/import-bi-to-metric-view.md`** — BYO lane: Genie Code `/importBI` (Tableau/Power BI) → promote local → governed UC Metric View (formats, 100 MB/volume limit, "Export to a Unity Catalog metric view", aliases→synonyms)
 
 ## Scripts & Assets
 

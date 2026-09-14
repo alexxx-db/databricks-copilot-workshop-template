@@ -273,6 +273,14 @@ only). Genie Spaces need the workshop `04` (JSON schema + `_assert_sql_arrays` v
 Dashboards are authored by navigation, then the extracted `.lvdash.json` feeds the existing
 `deploy_dashboard.py` bundle job for persistence + cross-env redeploy.
 
+**BYO BI import — `/importBI` (native slash command; requires partner-powered AI features).** Attach a
+Tableau (`.twb/.twbx/.tds/.tdsx`) or Power BI (`.pbit`) file (≤100 MB direct, or reference a UC volume
+path `@/Volumes/…` for larger). It builds an **AI/BI dashboard + LOCAL (dashboard-scoped) metric views +
+detected relationships** — the local views are **NOT reusable by a Genie Agent** until you **promote**
+them ("Export to a Unity Catalog metric view" → your write catalog/schema). Keep only the views matching
+the signed-off inventory; imported field aliases become MV synonyms. Full procedure + gotchas:
+`data_product_accelerator/skills/semantic-layer/01-metric-views-patterns/references/import-bi-to-metric-view.md`.
+
 ## 7. Verifying a deployed app
 
 A deployed App sits behind the Databricks Apps **OAuth gate** — a raw `Authorization: Bearer` token (even
