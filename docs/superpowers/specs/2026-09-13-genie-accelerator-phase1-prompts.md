@@ -20,6 +20,14 @@ deck's chunking and wording and add **only** the enhancement whitelist below.
 7. **Verified queries attach to the space** (the deck's Ex2 prompt-3 wording is loose — MVs have no
    `example_question_sqls`; the *draft* is discussed in Ex2, the *apply* happens in Ex3).
 8. **Optional Activation tail** (dashboard → synced tables → Lakebase → App → DAB) — beyond the deck.
+9. **[DEFERRED — pending Run-B]** Optional **Step 4b "Advanced measures"** + **benchmark seeds** drawn
+   from the analytical-patterns cookbook (`semantic-layer/01-metric-views-patterns/references/analytical-patterns.md`,
+   distilled from [uc-semantics-patterns](https://github.com/databricks-solutions/uc-semantics-patterns)):
+   after the MVP measures, offer a stretch — add a **ranking** or **period-over-period (YoY/QoQ)** measure
+   (both fit `samples.tpch`), then reuse the cookbook's verified TPC-H queries as **golden benchmark seeds**
+   in Step 9. **Not wired yet** — hold the workshop wiring until it can ride alongside the Run-B live pass
+   (same discipline as the Import BI reference). Semi-additive/currency patterns are BYO/synthetic-only
+   (need inventory/FX tables) — not for the TPC-H happy path.
 
 **What is NOT a deviation (deck fidelity restored in this rewrite):**
 - **Ex3 optimize loop.** The deck loads benchmarks *with expected answers* and runs the optimizer.

@@ -652,6 +652,11 @@ See `scripts/create_metric_views.py` for the full working script and `references
 - **`references/implementation-workflow.md`** — Step-by-step creation workflow
 - **`references/validation-queries.md`** — SQL queries for deployment verification
 - **`references/import-bi-to-metric-view.md`** — BYO lane: Genie Code `/importBI` (Tableau/Power BI) → promote local → governed UC Metric View (formats, 100 MB/volume limit, "Export to a Unity Catalog metric view", aliases→synonyms)
+- **`references/analytical-patterns.md`** — advanced measure/dimension cookbook: ranking (dynamic/static/partitioned), semi-additive balances (opening/closing/growth), currency conversion (query-time parameter + FX join), static segmentation (price bands, per-category, config table). Distilled from `uc-semantics-patterns` with TPC-H/TPC-DS fit notes
+
+## External sources (authoritative pattern lookups)
+
+- **[databricks-solutions/uc-semantics-patterns](https://github.com/databricks-solutions/uc-semantics-patterns)** — Databricks' curated Metric View YAML pattern library (Time Intelligence, Semi-additive, Ranking, Currency conversion, Static segmentation), each with a **verified test query + expected output** on TPC-H/TPC-DS. Use as the source-of-truth lookup when a request needs a pattern beyond this skill's shipped set; the distilled highlights live in `references/analytical-patterns.md`.
 
 ## Scripts & Assets
 

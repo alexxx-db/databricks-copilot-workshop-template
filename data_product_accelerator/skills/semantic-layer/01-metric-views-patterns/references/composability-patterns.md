@@ -195,6 +195,38 @@ measures:
     expr: (MEASURE(current_day_sales) - MEASURE(previous_day_sales)) / MEASURE(previous_day_sales) * 100
 ```
 
+**Quarter-over-Quarter (QoQ) and Week-over-Week (WoW):** same offset shape as MoM/YoY — a `current`
+window plus an `offset` window at the matching grain, then a growth ratio. Match the `offset` unit to the
+`order` grain (`-3 month` for a quarter, `-7 day` for a week):
+
+```yaml
+measures:
+  # Quarter-over-Quarter
+  - name: sales_cq
+    expr: SUM(o_totalprice)
+    window: [{ order: quarter, range: current, semiadditive: last }]
+  - name: sales_pq
+    expr: SUM(o_totalprice)
+    window: [{ order: quarter, range: current, semiadditive: last, offset: -3 month }]
+  - name: sales_qoq
+    expr: (MEASURE(sales_cq) - MEASURE(sales_pq)) / MEASURE(sales_pq)
+    format: { type: percentage, decimal_places: { type: exact, places: 2 } }
+
+  # Week-over-Week (fixed Mon–Sun intervals)
+  - name: sales_cw
+    expr: SUM(o_totalprice)
+    window: [{ order: week, range: current, semiadditive: last }]
+  - name: sales_pw
+    expr: SUM(o_totalprice)
+    window: [{ order: week, range: current, semiadditive: last, offset: -7 day }]
+  - name: sales_wow
+    expr: (MEASURE(sales_cw) - MEASURE(sales_pw)) / MEASURE(sales_pw)
+    format: { type: percentage, decimal_places: { type: exact, places: 2 } }
+```
+
+> MoM/QoQ/YoY/WoW are one family — see the fuller worked set (and verified TPC-H numbers) in
+> `analytical-patterns.md` and its source [uc-semantics-patterns](https://github.com/databricks-solutions/uc-semantics-patterns).
+
 **Running Total:**
 ```yaml
   - name: running_total_sales
