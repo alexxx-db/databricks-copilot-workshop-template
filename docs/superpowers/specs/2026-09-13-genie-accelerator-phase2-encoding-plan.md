@@ -5,6 +5,8 @@ staged in `phase1-evidence/run-b/_run-b-prompts.md`). Phase 2 encodes the finali
 from `2026-09-13-genie-accelerator-phase1-prompts.md` into the app so the Configuration UI can
 generate them.
 
+> **App-adoption handoff:** the self-contained plan for landing this track in `vibe-coding-workshop-app` (27 seed rows + UI nav, arch diagram, renderer, deploy) lives in [`2026-09-14-genie-accelerator-app-adoption/PLAN.md`](./2026-09-14-genie-accelerator-app-adoption/PLAN.md), with the ready-to-append rows in [`seed-blocks.sql`](./2026-09-14-genie-accelerator-app-adoption/seed-blocks.sql).
+
 ---
 
 ## 1. How the app encodes a prompt (from `apps_lakebase/prompts/`)
