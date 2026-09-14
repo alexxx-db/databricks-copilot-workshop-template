@@ -169,11 +169,13 @@ Exact numbers confirmed against the app's track/visibility-gating when Batch 1 i
    `{chapter_3_lakehouse_catalog}` / `{chapter_3_lakehouse_schema}` (`LakehouseParamsEditor`), write =
    `{lakehouse_default_catalog}` + Gold-target editor. Metric-view name, domain/subdomains, and BYO
    files are not variables (Genie Code suggests / UI-first / uploaded). See §1 mapping table.
-2. **Batch 1 — Semantic Layer group (Steps 1–5, NEW):** author `semlayer_*` section files (60–64),
-   run `sync_markdown_to_seed.py`, add genie-code forks (Locate, Profile, Measures, Metric View,
-   Synonyms). **Reuse the Step-10 extract/upload/generate mode-tab pattern for `semlayer_locate`
-   (Step 1)** and add an **Import BI tab + promote-local→UC beat to `semlayer_metric_view` (Step 4)**.
-   Highest-value, fully Phase-1-validated.
+2. **[DONE 2026-09-14] Batch 1 — Semantic Layer group (Steps 1–5, NEW):** authored `semlayer_*`
+   section files (`order_number` 60–64, `input_id` 60–64) + two genie-code forks (`input_id` 932/933:
+   Locate file-drop/synthetic navigation, Metric View `/importBI` Path A). All seven parsed into the
+   seed and **pass `lint_section_prompts.py`**. `semlayer_locate` (Step 1) reuses the
+   extract/upload/generate mode-tab pattern; `semlayer_metric_view` (Step 4) carries the Path A
+   Import-BI + promote-local→UC beat (Tab A author / Tab B Import BI). See §5 decision log for the two
+   tooling findings surfaced during encoding.
 3. **Batch 2 — Genie Agent group (Steps 6–10, 14, NEW):** author `gagent_*` sections (65–69, 73):
    Describe, Instructions, Verified queries, Benchmarks, GC-native Optimize loop, Share.
 4. **Batch 3 — Genie Ontology group (Steps 11–13, NEW):** `ontology_*` sections (70–72), UI-preferred
@@ -201,6 +203,22 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   Steps 1–13 as the track's own new gated sections** in three groups (`semlayer_*`, `gagent_*`,
   `ontology_*`) and **leave the manifest band intact** as the optional productionize hand-off (tail
   Steps 15–17). Step 10 optimize is the GC-native curation loop, distinct from `optimize_genie` (25).
+- **2026-09-14 — Batch 1 encoded (§4.2):** authored `sections/60–64-semlayer_*.md` (DEFAULT,
+  `bypass_llm=true`) + `sections/99-semlayer_{locate,metric_view}.genie-code.md` (forks, `input_id`
+  932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
+  write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
+  bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — TWO tooling findings surfaced during Batch 1 (action needed before Batch 2 commit):**
+  1. **`apps_lakebase/prompts/` is gitignored in THIS repo** (`.gitignore:96`) — zero files tracked.
+     The encoded `.md` + seed are a **working copy**; the canonical, version-controlled home is the
+     **`vibe-coding-workshop-app` repo**. Batch-1 artifacts must be landed there to persist (only this
+     tracked `docs/` plan captures the work in the template repo).
+  2. **`sync_markdown_to_seed.py` is non-idempotent against the current seed** — a full run wants to
+     rewrite **all 100 blocks** (global `.md`↔seed formatting drift, pre-existing). So the documented
+     "author `.md` → run sync → review diff" flow can NOT be run wholesale without sweeping unrelated
+     churn. Batch 1 used a **scoped sync** (reusing `build_insert_block`/`parse_markdown` filtered to
+     the 7 new ids) + hand-seeded stub rows. Before Batch 2: either re-baseline the seed from all
+     `.md` in a dedicated commit, or keep using the scoped-sync approach per batch.
 - **2026-09-13 — variables RETRACTED after inspecting the app repo (§1):** no new runtime variables or
   a "second LakehouseParams pair" are needed. Source = `{chapter_3_lakehouse_catalog/schema}`
   (`LakehouseParamsEditor`, per-session override); write = `{lakehouse_default_catalog}` + the
