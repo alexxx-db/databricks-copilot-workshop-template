@@ -74,8 +74,12 @@
   source subquery returned identical numbers. The pre-joined pattern is now *recommended*, not
   *required*. (§6 Metric-View row + prompts Step 4 updated.)
 - **Source vs write target split.** `samples.tpch` was read-only, so governed assets needed a
-  separate writable schema. Added `{write_catalog}.{write_schema}` (distinct from the Step-1
-  `{source_*}`), captured via a second `LakehouseParams` pair — never guessed by Genie Code.
+  separate writable schema — `{write_catalog}.{write_schema}` distinct from the Step-1 `{source_*}`,
+  never guessed by Genie Code. **No new variables/pair are needed (corrected 2026-09-13):** source maps
+  to the app's existing `{chapter_3_lakehouse_catalog}` / `{chapter_3_lakehouse_schema}`
+  (`LakehouseParamsEditor`), write maps to `{lakehouse_default_catalog}` + the `GoldTableTargetEditor`
+  schema/prefix (there is no `lakehouse_default_schema` param). Metric-view name → Genie Code suggests;
+  domain/subdomains → UI-first; BYO glossary/BI → uploaded. See the Phase-2 plan §1 mapping table.
 - **Batch the interview.** One-question-at-a-time dripped 3 sequential questions; Step 1 (and the §5
   shape) now ask for **all** questions in one batched list with pre-filled assumptions.
 - **Synonyms are added during Step 4** in practice → Step 5 reframed as *review & expand*.

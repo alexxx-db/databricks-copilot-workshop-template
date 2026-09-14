@@ -11,7 +11,8 @@ deck's chunking and wording and add **only** the enhancement whitelist below.
 
 **Enhancement whitelist (the ONLY sanctioned deviations from the deck):**
 1. **Step 0 PRD (Type A)** + **`vibecoding-state`** — the context spine the deck lacks.
-2. **Structured source+write input** (`LakehouseParams` ×2 — `{source_*}` and `{write_*}`).
+2. **Structured source+write input** — reuse the app's existing surfaces: `LakehouseParamsEditor`
+   (source, per-session) + `GoldTableTargetEditor` (write target). **No new variables/pair** (see Conventions).
 3. **BYO context** via Genie Code file-add + `/importBI` (both deck-sanctioned).
 4. **Discover-don't-inject** Measures gate (matches the deck's Ex1 spirit; proven unprompted in `run-a`).
 5. **Batched interview** (one numbered list of questions with pre-filled assumptions).
@@ -37,21 +38,28 @@ deck's chunking and wording and add **only** the enhancement whitelist below.
 
 ## Conventions (apply to every prompt)
 
-**Variables** (filled app-side before the prompt is copied, so Genie Code receives literal names):
+**Variables** (filled app-side before the prompt is copied, so Genie Code receives literal names).
+**No new runtime variables are introduced** — everything below maps onto tokens/surfaces the app
+already has (confirmed against the app repo, 2026-09-13):
 - `{source_catalog}` / `{source_schema}` — where the **existing data** lives (Step 1). May be
-  **read-only** (e.g. `samples.tpch`). Shown below as `<source_catalog>.<source_schema>`. Captured
-  via the app's `LakehouseParams` panel (§3 of the design spec).
+  **read-only** (e.g. `samples.tpch`). Shown below as `<source_catalog>.<source_schema>`. These are the
+  app's existing **`{chapter_3_lakehouse_catalog}` / `{chapter_3_lakehouse_schema}`** ("Lakehouse Source
+  Catalog/Schema"), captured via **`LakehouseParamsEditor`** (per-session overridable) — not new tokens.
 - `{write_catalog}` / `{write_schema}` — the **writable target** where governed assets (Metric View,
   Genie space, dashboard) are created. **Distinct from the source** — Layer-3 proved the source is
-  often read-only, so the build target must be captured separately (a second `LakehouseParams`
-  pair), never guessed by Genie Code. Shown as `<write_catalog>.<write_schema>`.
-- `{metric_view}` — the Metric View name (app defaults from `{function}`, e.g. `order_revenue_metrics`,
-  or Genie Code names it and writes it back to state).
+  often read-only, so the build target is captured separately, never guessed by Genie Code. This is the
+  app's existing **`{lakehouse_default_catalog}`** (write catalog) + the **`GoldTableTargetEditor`**
+  schema/prefix — **not** a "second `LakehouseParams` pair" and **not** a new `lakehouse_default_schema`
+  token. Shown as `<write_catalog>.<write_schema>`.
+- `{metric_view}` — the Metric View name. **Not a variable** — **Genie Code suggests it** (app defaults
+  the display from `{function}`, e.g. `order_revenue_metrics`) and writes the chosen name to state.
 - `{use_case_title}` / `{function}` — from the selected use case / PRD.
-- `{domain}` / `{subdomain_*}` — the discovery domain + subdomains authored in Ex4 (app defaults
-  from `{function}`; the user can rename).
+- `{domain}` / `{subdomain_*}` — the discovery domain + subdomains authored in Ex4. **UI-first, not
+  variables** — authored/selected in the Discover UI (a workshop domain may be pre-created; if so, use
+  it). Shown in prompts as readable placeholders only.
 - `{byo_glossary_file}` — **the user's own** definitions export (an Excel glossary, a CSV, a docs
-  file, or a Tableau/PBI file) dropped into Genie Code. Optional; there is no fixture file — if the
+  file, or a Tableau/PBI file). **Not a variable — uploaded directly** (chat drop / UC volume /
+  `CsvUploadPanel` / `/importBI`). Optional; there is no fixture file — if the
   user has none, the BYO lines are skipped and Genie Code elicits definitions instead.
 
 > **Historical note:** earlier drafts used a single `{chapter_3_lakehouse_catalog}.{schema}` for both
@@ -175,10 +183,12 @@ step — see the State wrapper).
 
 **Reasoning split:** static template (variable substitution only); **Genie Code** reasons on the
 real schema + any **files you drop in**. The app does *not* generate this prompt.
-**Leans on:** app `LakehouseParams` (structured input, filled before copy); Genie Code file-add;
-Faker (synthetic branch).
-**Navigation:** none — file-drop + reasoning; drop `{byo_glossary_file}` via the context button, then
-run from any workspace surface.
+**Leans on:** the app's existing **extract/upload/generate mode-tab pattern** (from Step 10
+`bronze_table_metadata`) — reuse it here: **extract** = read existing tables via `LakehouseParamsEditor`
+(source catalog/schema); **upload** = `CsvUploadPanel`; **generate** = "Design from PRD" = the
+**synthetic / no-existing-data** branch (Faker). Plus Genie Code file-add for BYO definitions.
+**Navigation:** none — pick the mode tab, then file-drop + reasoning; drop the glossary/BI export via
+the context button, then run from any workspace surface.
 **Gate:** `catalog.schema` saved to session `LakehouseParams` (or synthetic branch chosen);
 `design_prd.md` read; `docs/genie_brief.md` seeded from PRD + any dropped files, gate recorded to
 `.vibecoding-state.md`.
@@ -308,9 +318,16 @@ LANGUAGE YAML`) — runs from any workspace surface; no special page. (Extract-b
 **Gate:** each *approved* measure → 1 Metric View live; `MEASURE()` query returns; non-additive
 flagged; Metric View name + gate recorded to `.vibecoding-state.md`.
 
-> **Path A (BYO, if you have a Tableau/PBI file):** run `/importBI` in Genie Code and upload your
-> `.twb`, `.twbx`, or `.pbit`. Review — do **not** promote every Metric View the import produces;
-> keep only the one covering your signed-off inventory. Then continue at Step 5.
+> **Path A (BYO, if you have a Tableau/PBI file) — surfaced as its own "Import BI" tab in Step 4.**
+> Run `/importBI` in Genie Code and upload your `.twb`/`.twbx`/`.tds`/`.tdsx` (Tableau) or `.pbit`
+> (Power BI) — ≤100 MB directly, or point at a UC volume path for larger files. **Import BI produces
+> MORE than a Metric View:** it builds an **AI/BI dashboard + LOCAL (dashboard-scoped) metric views +
+> discovered relationships**. Those local views are **not reusable by a Genie Agent** — you must
+> **promote the one(s) covering your signed-off inventory to Unity Catalog** ("Export to Metric View"
+> → `@<write_catalog>.<write_schema>`). Do **not** promote every view the import produces; keep only
+> what matches the brief. (For a clean model-only import, start `/importBI` from an empty UC metric
+> view.) Then continue at Step 5. Docs:
+> <https://docs.databricks.com/aws/en/dashboards/manage/import-bi>.
 
 **Path B — author from the signed-off inventory:**
 

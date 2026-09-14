@@ -97,28 +97,36 @@ must surface any it finds from the synthetic profile on its own, and the invento
 
 ## ⭐ Step 4 — Draft the Metric View — **`/importBI` PATH A** (the Run-B delta)
 
-Instead of authoring from scratch (Run A's Path B), import the BI semantic model:
+Instead of authoring from scratch (Run A's Path B), import the BI semantic model. **Know what
+`/importBI` actually produces:** it does **not** just make a Metric View — it builds an **AI/BI
+dashboard + LOCAL (dashboard-scoped) metric views + discovered relationships**. The local views are
+**not reusable by a Genie Agent**, so you must **promote** the one(s) you want to Unity Catalog first.
+(≤100 MB direct, or a UC volume path for larger files. Docs:
+<https://docs.databricks.com/aws/en/dashboards/manage/import-bi>.)
 
-1. In Genie Code, run **`/importBI`** and upload your real `.twbx` / `.twb` / `.pbit`.
-2. Review the Metric View(s) it produces — **do not promote all of them**; keep only the one covering
-   your signed-off inventory (Step 3).
-3. Then:
+1. In Genie Code, run **`/importBI`** and upload your real `.twbx` / `.twb` / `.tds` / `.tdsx` / `.pbit`.
+2. Review what it produced — a dashboard + local metric view(s). **Do not promote all of them**; keep
+   only the view covering your signed-off inventory (Step 3).
+3. **Promote local → UC:** "Export to Metric View" into
+   `serverless_stable_6t92c3_catalog.genie_accel_runb` so the Genie Agent can attach it.
+4. Then:
 
 ```
 Read docs/genie_brief.md (the signed-off inventory) and .vibecoding-state.md first.
 
-From the Metric View that /importBI produced, keep only the measures in my signed-off inventory and
-drop the rest. Save the kept one as @serverless_stable_6t92c3_catalog.genie_accel_runb.subscription_revenue_metrics
-using CREATE OR REPLACE (check state + the target schema for an existing one of this name first).
-Use business-friendly display names, flag any non-additive measure, and run a MEASURE() query to
-prove each approved measure returns. Keep the imported field aliases — I'll turn them into synonyms
-next. Then save the Metric View name and gate result to .vibecoding-state.md.
+I ran /importBI, which created an AI/BI dashboard plus local (dashboard-scoped) metric views. Promote
+ONLY the view covering my signed-off inventory to Unity Catalog and save it as
+@serverless_stable_6t92c3_catalog.genie_accel_runb.subscription_revenue_metrics using CREATE OR REPLACE
+(check state + the target schema for an existing one of this name first). Keep only the measures in my
+inventory and drop the rest. Use business-friendly display names, flag any non-additive measure, and
+run a MEASURE() query to prove each approved measure returns. Keep the imported field aliases — I'll
+turn them into synonyms next. Then save the Metric View name and gate result to .vibecoding-state.md.
 ```
 
-**Golden transcript should show:** the `/importBI` payload becomes a Metric View, non-inventory
-measures are dropped, a `MEASURE()` query returns, and the **imported field aliases are retained** for
-Step 5. *(Bulk-import misses usually mean the domain **name** was passed where the internal **ID** is
-needed.)*
+**Golden transcript should show:** `/importBI` produces a dashboard + local metric view(s); exactly
+one is **promoted to a governed UC Metric View**; non-inventory measures are dropped; a `MEASURE()`
+query returns; and the **imported field aliases are retained** for Step 5. *(Bulk-import misses
+usually mean the domain **name** was passed where the internal **ID** is needed.)*
 
 ## Step 5 — Review & Expand Synonyms  *(BI aliases must survive here)*
 

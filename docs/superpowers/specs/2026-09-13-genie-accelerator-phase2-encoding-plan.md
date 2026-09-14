@@ -42,16 +42,31 @@ author `.md` files → run the sync → review the seed diff → `lint_section_p
 > Assets (TVFs → Metric Views → Genie → Dashboard)")**, and `optimize_genie` (25). These are **deploy**
 > steps (they push pre-planned assets), **not** the interactive *design* beats this track adds
 > (Measures gate, Metric View authoring, synonyms review). The new **Semantic Layer** section is the
-> *design* front-end that feeds these deploy steps — author it to hand off cleanly, and **reuse
-> `optimize_genie` (25)** as the Step-10 optimize home rather than duplicating it.
+> *design* front-end that feeds these deploy steps — author it to hand off cleanly. (Step-10 optimize
+> is the GC-native curation loop in its own `gagent_optimize` section; `optimize_genie` (25) stays as
+> the heavyweight Workbench-style option — see §2.)
 
 **Runtime variables** already substituted by the app (reuse these; don't invent parallels):
 `{industry_name}`, `{use_case_title}`, `{use_case_description}`, `{lakehouse_default_catalog}`,
-`{default_warehouse}`, `{prd_document}`, `{table_metadata}`, `{use_case_slug}`, `{databricks_cli_profile}`, …
+`{chapter_3_lakehouse_catalog}`, `{chapter_3_lakehouse_schema}`, `{default_warehouse}`,
+`{prd_document}`, `{table_metadata}`, `{use_case_slug}`, `{databricks_cli_profile}`, …
 
-**New variables this track needs** (add to the runtime substitution set + `LakehouseParams`):
-`{source_catalog}.{source_schema}`, `{write_catalog}.{write_schema}`, `{metric_view}`, `{function}`,
-`{domain}`, `{subdomain_*}`, `{byo_glossary_file}`.
+**No new runtime variables are required** (corrected 2026-09-13 after inspecting the app repo — the
+substitution set + structured inputs already cover this track). Map the track's needs onto what
+exists:
+
+| Track need | Use existing | App input surface |
+|---|---|---|
+| Source catalog/schema (read) | **`{chapter_3_lakehouse_catalog}` / `{chapter_3_lakehouse_schema}`** ("Lakehouse Source Catalog/Schema", per-session overridable) | `LakehouseParamsEditor` (label `Source:`; `allow_session_override`) |
+| Write catalog/schema (governed assets) | **`{lakehouse_default_catalog}`** (write catalog) + schema/prefix | `GoldTableTargetEditor` (catalog + schema + prefix) — note there is **no** `lakehouse_default_schema` param; the write schema lives in the Gold-target editor |
+| Metric View name | **none** — Genie Code suggests it | — |
+| Function / team | **derive** from `{use_case_title}` / `{industry_name}` / `{use_case_description}` | existing use-case context |
+| Domain / subdomains | **none** — UI-first (Discover UI) | Discover UI |
+| BYO glossary / BI file | **none** — uploaded (chat drop / UC volume / CSV panel) | `CsvUploadPanel` / Genie Code file-add / `/importBI` |
+
+> **The "second LakehouseParams pair" already exists.** Source = `LakehouseParamsEditor`; write =
+> `GoldTableTargetEditor`. No new pair, no new tokens — the earlier "add 7 vars + a pair" prerequisite
+> is retracted.
 
 ---
 
@@ -102,6 +117,19 @@ Notes:
   **Genie Agent** `gagent_*` (Steps 6–10, 14), **Genie Ontology** `ontology_*` (Steps 11–13).
 - **Steps 1–2 placement.** Locate + Profile lead the Semantic Layer group (the discovery arc that
   *produces* the measures), so the group reads "data → measures → metric view → synonyms."
+- **Step 1 reuses an existing UI pattern (don't reinvent).** The app's Step 10 (`bronze_table_metadata`)
+  already ships a **three-mode tab** — `extract` (from tables, via `LakehouseParamsEditor` = source
+  catalog/schema), `upload` (`CsvUploadPanel`), `generate` ("Design from PRD" = the **synthetic /
+  no-existing-tables** branch). `semlayer_locate` should reuse this exact extract/upload/generate mode
+  tab; the "read existing OR synthetic" toggle you want already exists as `generate` mode.
+- **Step 4 needs an Import BI tab (own mode), and Import BI creates MORE than a Metric View.**
+  `/importBI` (Tableau `.twb/.twbx/.tds/.tdsx`, Power BI `.pbit`; ≤100 MB direct or a UC volume path)
+  builds an **AI/BI dashboard + LOCAL (dashboard-scoped) metric views + relationships** — the local
+  views are **not reusable** and must be **promoted to UC** ("Export to Metric View" →
+  `{lakehouse_default_catalog}` + Gold-target schema) before the Genie Agent can use them. A cleaner
+  "import the data model only" path starts the import from an empty UC metric view. So `semlayer_metric_view`
+  should offer **Tab A — author from the measures inventory** (Path B) and **Tab B — Import BI** with an
+  explicit **promote-local→UC** beat. Docs: <https://docs.databricks.com/aws/en/dashboards/manage/import-bi>.
 - **Step 10 optimize is GC-native and distinct** from `optimize_genie` (25): the lighter Conversation-
   API benchmark-curation loop (5-mode table → append-only → ~85%), not the MLflow/8-scorer/6-lever
   orchestrator. `optimize_genie` (25) stays as the heavyweight Workbench-style option (currently
@@ -136,11 +164,16 @@ Exact numbers confirmed against the app's track/visibility-gating when Batch 1 i
 0. **[DONE] Reviewed the existing band** (`genie_space` 15, `deploy_di_assets` 24, `optimize_genie`
    25): confirmed manifest-driven/DAB modality — kept intact as the productionize hand-off, NOT
    enhanced. Steps 1–13 authored as the track's own gated sections.
-1. **Add the 7 new runtime variables** to the substitution set + a second `LakehouseParams` pair
-   (source vs write target) — prerequisite for every template below.
+1. **~~Add 7 runtime variables + a second LakehouseParams pair~~ — RETRACTED (no new vars needed).**
+   Instead: **map** the track templates onto existing tokens — source =
+   `{chapter_3_lakehouse_catalog}` / `{chapter_3_lakehouse_schema}` (`LakehouseParamsEditor`), write =
+   `{lakehouse_default_catalog}` + Gold-target editor. Metric-view name, domain/subdomains, and BYO
+   files are not variables (Genie Code suggests / UI-first / uploaded). See §1 mapping table.
 2. **Batch 1 — Semantic Layer group (Steps 1–5, NEW):** author `semlayer_*` section files (60–64),
    run `sync_markdown_to_seed.py`, add genie-code forks (Locate, Profile, Measures, Metric View,
-   Synonyms). Highest-value, fully Phase-1-validated.
+   Synonyms). **Reuse the Step-10 extract/upload/generate mode-tab pattern for `semlayer_locate`
+   (Step 1)** and add an **Import BI tab + promote-local→UC beat to `semlayer_metric_view` (Step 4)**.
+   Highest-value, fully Phase-1-validated.
 3. **Batch 2 — Genie Agent group (Steps 6–10, 14, NEW):** author `gagent_*` sections (65–69, 73):
    Describe, Instructions, Verified queries, Benchmarks, GC-native Optimize loop, Share.
 4. **Batch 3 — Genie Ontology group (Steps 11–13, NEW):** `ontology_*` sections (70–72), UI-preferred
@@ -168,3 +201,11 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   Steps 1–13 as the track's own new gated sections** in three groups (`semlayer_*`, `gagent_*`,
   `ontology_*`) and **leave the manifest band intact** as the optional productionize hand-off (tail
   Steps 15–17). Step 10 optimize is the GC-native curation loop, distinct from `optimize_genie` (25).
+- **2026-09-13 — variables RETRACTED after inspecting the app repo (§1):** no new runtime variables or
+  a "second LakehouseParams pair" are needed. Source = `{chapter_3_lakehouse_catalog/schema}`
+  (`LakehouseParamsEditor`, per-session override); write = `{lakehouse_default_catalog}` + the
+  `GoldTableTargetEditor` (there is no `lakehouse_default_schema` param). Metric-view name → Genie Code
+  suggests; domain/subdomains → UI-first; BYO glossary/BI → uploaded. **Step 1 reuses the existing
+  Step-10 extract/upload/generate mode-tab pattern** (synthetic = `generate`). **Import BI creates an
+  AI/BI dashboard + LOCAL metric views + relationships** — Step 4 gets an Import BI tab with an
+  explicit **promote-local→UC** beat.
