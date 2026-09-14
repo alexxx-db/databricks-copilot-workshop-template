@@ -182,9 +182,13 @@ Exact numbers confirmed against the app's track/visibility-gating when Batch 1 i
    createAsset/PATCH navigation, Optimize Conversation-API loop). All eight scoped-synced into the seed
    and **pass `lint_section_prompts.py`**. Prompt bodies are the Phase-1-validated Steps 6–10/14
    verbatim; Step 10 optimize is the GC-native curation loop, distinct from `optimize_genie` (25).
-4. **Batch 3 — Genie Ontology group (Steps 11–13, NEW):** `ontology_*` sections (70–72), UI-preferred
-   with the pre-created-domain fallback; Beta caveats in `how_to_apply`. *(Author the missing Ontology
-   skill alongside — the current repo skill gap.)*
+4. **[DONE 2026-09-14] Batch 3 — Genie Ontology group (Steps 11–13, NEW):** authored `ontology_*`
+   sections (`order_number`/`input_id` 70–72: Domain, Pages, Routing) + three genie-code forks
+   (`input_id` 936/937/938), UI-preferred with the pre-created-domain fallback and Beta caveats in
+   `how_to_apply`. All six scoped-synced and **pass `lint_section_prompts.py`**. *(The Ontology skill
+   already exists — `data_product_accelerator/skills/semantic-layer/06-genie-discover-ontology`, the
+   REFERENCE + DRAFTING-CONTRACT skill — so no skill needed authoring; the sections point at it. The
+   earlier "skill gap" note was stale.)*
 5. **Batch 4 — Tail hand-off (Steps 15–17):** wire the track's close to the existing
    `deploy_di_assets` (24) / `aibi_dashboard` (14) / `activation_*`; add a light `aibi_dashboard`
    genie-code fork only if the dashboard-on-Metric-View beat needs it. No new monolith authoring.
@@ -212,6 +216,14 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
   write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
   bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — Batch 3 encoded (§4.4):** authored `sections/70–72-ontology_*.md` (DEFAULT,
+  `bypass_llm=true`, UI-preferred) + `sections/99-ontology_{domain,pages,routing}.genie-code.md`
+  (forks, `input_id` 936/937/938). Parser now sees 114 blocks; all six `✅` under
+  `lint_section_prompts.py` (0 new errors). **Corrected a stale plan note:** the Ontology skill
+  `06-genie-discover-ontology` already exists (Beta limits, Manage-Discovery, chunk-safe rule,
+  ID-vs-name gotcha) — sections reference it; nothing new to author. Discover has no public Pages API,
+  so all three are UI-first with Genie-Code drafting inside the editor. Same gitignore/working-copy
+  caveat.
 - **2026-09-14 — Batch 2 encoded (§4.3):** authored `sections/65–69,73-gagent_*.md` (DEFAULT,
   `bypass_llm=true`) + `sections/99-gagent_{describe,optimize}.genie-code.md` (forks, `input_id`
   934/935). Same token mapping and scoped-sync approach as Batch 1; parser now sees 108 blocks; all
