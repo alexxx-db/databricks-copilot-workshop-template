@@ -195,7 +195,7 @@ The field must be `answer` containing an array of objects with `format` ("SQL" o
 - `config.sample_questions` → sort by `id`
 - `benchmarks.questions` → sort by `id`
 
-The canonical `sort_genie_config()` implementation lives in `04-genie-optimization-applier/scripts/optimization_applier.py` and is documented in `04-genie-space-export-import-api/SKILL.md` Section 8.
+The canonical `sort_genie_config()` implementation is documented in `04-genie-space-export-import-api/SKILL.md` Section 8.
 
 ---
 

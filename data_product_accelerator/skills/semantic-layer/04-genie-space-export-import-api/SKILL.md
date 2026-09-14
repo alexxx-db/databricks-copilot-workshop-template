@@ -666,7 +666,7 @@ def sort_genie_config(config: dict) -> dict:
     return config
 ```
 
-**Always call `sort_genie_config()` BEFORE submitting to the API.** The canonical implementation lives in `04-genie-optimization-applier/scripts/optimization_applier.py`.
+**Always call `sort_genie_config()` BEFORE submitting to the API.** The canonical implementation is documented in Section 8 of this skill.
 
 ### Section 9: Idempotent Deployment (Update-or-Create)
 
@@ -850,7 +850,6 @@ There is no supported public API for flipping `run_as_type` on an existing space
 
 After API deployment is complete:
 - **If this is the first deployment:** Record space IDs and set them as `databricks.yml` variable defaults.
-- **If benchmarks need tuning:** Proceed to **`semantic-layer/05-genie-optimization-orchestrator/SKILL.md`** for benchmark testing and the 6-lever optimization loop.
 - **If deploying to additional environments:** Re-run the deploy notebook with target environment variables.
 
 ## Version History

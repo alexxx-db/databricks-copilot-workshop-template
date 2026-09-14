@@ -32,7 +32,6 @@ The first thing the agent encounters after the overview is the **Decision Tree**
 | Only need TVFs? | Read `02-databricks-table-valued-functions/SKILL.md` directly |
 | Only need Genie Space setup? | Read `03-genie-space-patterns/SKILL.md` directly |
 | Need Genie API automation? | Read `04-genie-space-export-import-api/SKILL.md` directly |
-| Need to optimize Genie accuracy? | Read `05-genie-optimization-orchestrator/SKILL.md` directly (routes to 4 workers in `genie-optimization-workers/`) |
 
 For an end-to-end request, the agent stays here. If the user only asked for one component, the agent would route to that specific worker skill instead.
 

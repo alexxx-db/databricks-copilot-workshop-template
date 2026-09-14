@@ -124,12 +124,6 @@ Maps every skill to the official documentation URLs used to verify its patterns 
 | https://docs.databricks.com/api/workspace/genie/listspaces | List Spaces API |
 | https://docs.databricks.com/genie/ | Genie overview, new features |
 
-### `semantic-layer/05-genie-optimization-orchestrator`
-| URL | Check For |
-|---|---|
-| https://docs.databricks.com/api/workspace/genie | Conversation API schema |
-| https://docs.databricks.com/aws/en/genie/trusted-assets | Control levers, asset types |
-
 ---
 
 ## Monitoring Domain (Medium Volatility)

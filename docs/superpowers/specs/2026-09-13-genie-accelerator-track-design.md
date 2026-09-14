@@ -612,7 +612,7 @@ is never broken for the other levels.
   CUJ verifier precedent `scripts/verify_agent_track_flow.py` (→ new `verify_genie_track_flow.py`).
 - Skills: `data_product_accelerator/skills/semantic-layer/` (metric-views-patterns,
   table-valued-functions, genie-space-patterns, genie-space-export-import-api,
-  genie-optimization-orchestrator); `skills/vibecoding-state`; `skills/genie-code-environment`;
+  genie-discover-ontology); `skills/vibecoding-state`; `skills/genie-code-environment`;
   `skills/databricks-asset-bundles`; AppKit skills under `apps_lakebase/skills/`.
 
 ---

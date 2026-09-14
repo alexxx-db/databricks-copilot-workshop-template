@@ -6,7 +6,7 @@ This document contains detailed domain index summaries for the skill navigation 
 
 **Design-First Pipeline:**
 ```
-context/*.csv → Gold Design (1) → Bronze (2) → Silver (3) → Gold Impl (4) → Planning (5) → Semantic (6) → Genie Optimization (6b) → Observability (7) → ML (8) → GenAI (9)
+context/*.csv → Gold Design (1) → Bronze (2) → Silver (3) → Gold Impl (4) → Planning (5) → Semantic (6) → Observability (7) → ML (8) → GenAI (9)
 ```
 
 **Input Convention:** Customer schema CSV lives in `context/` directory (e.g., `context/Wanderbricks_Schema.csv`). This is the single starting input that feeds the entire pipeline.
@@ -134,7 +134,7 @@ See: [Gold Layer Index (Stages 1 & 4)](#gold-layer-index-stages-1--4) below for 
 
 ## Semantic Layer Index (Stage 6)
 
-**Skills in domain:** 10 skills (1 orchestrator, 4 workers, 1 optimization orchestrator, 4 optimization workers)
+**Skills in domain:** 10 skills (1 orchestrator, 4 workers)
 
 ### Orchestrator
 
@@ -151,26 +151,11 @@ See: [Gold Layer Index (Stages 1 & 4)](#gold-layer-index-stages-1--4) below for 
 | `genie-space-patterns` | `semantic-layer/03-genie-space-patterns/SKILL.md` | ~1.5K | Yes |
 | `genie-space-export-import-api` | `semantic-layer/04-genie-space-export-import-api/SKILL.md` | ~1.1K | Yes |
 
-### Genie Optimization (Stage 6b — standalone orchestrator + 4 workers)
-
-| Skill | Path | ~Tokens | Standalone |
-|---|---|---|---|
-| `genie-optimization-orchestrator` | `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` | ~1.5K | Yes |
-| `genie-benchmark-generator` | `semantic-layer/genie-optimization-workers/01-genie-benchmark-generator/SKILL.md` | ~1.2K | Yes |
-| `genie-benchmark-evaluator` | `semantic-layer/genie-optimization-workers/02-genie-benchmark-evaluator/SKILL.md` | ~1.3K | Yes |
-| `genie-metadata-optimizer` | `semantic-layer/genie-optimization-workers/03-genie-metadata-optimizer/SKILL.md` | ~1.2K | Yes |
-| `genie-optimization-applier` | `semantic-layer/genie-optimization-workers/04-genie-optimization-applier/SKILL.md` | ~1.2K | Yes |
-
 **Key Patterns:**
 1. Metric views use `WITH METRICS LANGUAGE YAML` syntax
 2. TVFs must have STRING parameters for Genie compatibility
 3. Genie Spaces need comprehensive agent instructions (≤20 lines)
 4. Export/Import uses `serialized_space` JSON format
-5. Optimization uses MLflow-driven 3-layer judge architecture (8 judges + arbiter)
-6. Optimization targets: accuracy ≥95%, repeatability ≥90%
-7. Optimization workers: Generator (benchmarks) → Evaluator (judges) → Optimizer (GEPA/introspection) → Applier (6 control levers + dual persistence)
-
-**Cross-domain usage:** Genie optimization patterns are surfaced through `genai-agents/00-course-orchestrator` when GenAI workflows need Genie assets. The orchestrator routes to the relevant worker skills instead of the deleted setup skill.
 
 **Plan-as-Contract:** The semantic-layer orchestrator `consumes` `plans/manifests/semantic-layer-manifest.yaml` (Phase 0). Falls back to Gold table self-discovery if no manifest exists.
 
@@ -180,9 +165,6 @@ See: [Gold Layer Index (Stages 1 & 4)](#gold-layer-index-stages-1--4) below for 
 - Creating TVFs → Load `semantic-layer/02-databricks-table-valued-functions`
 - Setting up Genie Space → Load `semantic-layer/03-genie-space-patterns`
 - API automation → Load `semantic-layer/04-genie-space-export-import-api`
-- Optimizing Genie → Load `semantic-layer/05-genie-optimization-orchestrator` (routes to workers on demand)
-- Generating benchmarks only → Load `genie-optimization-workers/01-genie-benchmark-generator`
-- Running evaluation only → Load `genie-optimization-workers/02-genie-benchmark-evaluator`
 
 ---
 
@@ -304,12 +286,6 @@ See: [Gold Layer Index (Stages 1 & 4)](#gold-layer-index-stages-1--4) below for 
 | `production-monitoring` | `genai-agents/07-production-monitoring/SKILL.md` | ~0.9K | Yes |
 | `mlflow-genai-foundation` | `genai-agents/08-mlflow-genai-foundation/SKILL.md` | ~1.4K | Yes |
 
-### Cross-Domain Dependencies
-
-| Skill | Path | Domain | Purpose |
-|---|---|---|---|
-| `genie-optimization-orchestrator` | `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` | Semantic Layer | Genie accuracy testing, control levers, dual persistence |
-
 **Key Patterns:**
 1. ResponsesAgent is MANDATORY for all new Databricks GenAI agents
 2. Use OBO authentication with automatic context detection
@@ -322,7 +298,6 @@ See: [Gold Layer Index (Stages 1 & 4)](#gold-layer-index-stages-1--4) below for 
 
 **When to load full skills:**
 - Building a new agent end-to-end → Load `genai-agents/00-course-orchestrator`
-- Genie optimization (Phase 8 of agent implementation) → Load `semantic-layer/05-genie-optimization-orchestrator`
 - Specific task → Load the relevant worker skill directly
 
 ---

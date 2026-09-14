@@ -13,7 +13,7 @@ The framework's 77 Agent Skills are organized into 12 domain directories. Each d
 | Silver | `silver/` | `00-silver-layer-setup` | 2 workers | 3 | Stage 3 |
 | Gold (Impl) | `gold/` | `01-gold-layer-setup` | (shared) | (shared) | Stage 4 |
 | Planning | `planning/` | `00-project-planning` | 0 | 1 | Stage 5 |
-| Semantic Layer | `semantic-layer/` | `00-semantic-layer-setup` | 4 workers + 1 optimization orchestrator + 4 optimization workers | 10 | Stage 6 (+ optional 6b) |
+| Semantic Layer | `semantic-layer/` | `00-semantic-layer-setup` | 4 workers | 10 | Stage 6 |
 | Monitoring | `monitoring/` | `00-observability-setup` | 4 workers | 5 | Stage 7 |
 | ML | `ml/` | `00-ml-pipeline-setup` | 0 | 1 | Stage 8 |
 | GenAI Agents | `genai-agents/` | `00-course-orchestrator` | foundation/tracks/SDLC/capstone | 9 | Stage 9 |
@@ -84,11 +84,6 @@ Canonical Silver orchestrator path is `00-silver-layer-setup` (legacy `*-creatio
 | `02-databricks-table-valued-functions` | Worker | TVFs for Genie (STRING params, null safety, v3.0 comments) |
 | `03-genie-space-patterns` | Worker | Genie Space setup, agent instructions, benchmark questions |
 | `04-genie-space-export-import-api` | Worker | Programmatic Genie Space deployment via REST API |
-| `05-genie-optimization-orchestrator` | Orchestrator (standalone) | Routes to 4 workers for MLflow-driven optimization loop |
-| `genie-optimization-workers/01-genie-benchmark-generator` | Worker | Benchmark creation, GT validation, MLflow dataset sync |
-| `genie-optimization-workers/02-genie-benchmark-evaluator` | Worker | 3-layer judge architecture (8 judges + arbiter) |
-| `genie-optimization-workers/03-genie-metadata-optimizer` | Worker | GEPA/introspection, failure clustering, proposals |
-| `genie-optimization-workers/04-genie-optimization-applier` | Worker | 6 control levers, dual persistence, deployment |
 
 ---
 
@@ -129,7 +124,6 @@ The largest domain with the most workers.
 | `06-deployment-automation` | Worker | Evaluation-then-promote CI/CD |
 | `07-production-monitoring` | Worker | Registered scorers, sampling, trace archival |
 | `08-mlflow-genai-foundation` | Worker | Core MLflow 3.0 GenAI patterns |
-| `semantic-layer/05-genie-optimization-orchestrator` | Cross-domain | Genie optimization orchestrator (shared with semantic-layer, stage 6b) |
 
 ---
 

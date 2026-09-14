@@ -163,7 +163,7 @@ Perform project planning using @data_product_accelerator/skills/planning/00-proj
 |-------|-------|
 | **Orchestrator** | `semantic-layer/00-semantic-layer-setup` |
 | **Input** | Semantic layer manifest + Gold tables |
-| **Workers Used** | `semantic-layer/01-metric-views-patterns`, `02-databricks-table-valued-functions`, `03-genie-space-patterns`, `04-genie-space-export-import-api`. Genie optimization is standalone via `05-genie-optimization-orchestrator` (routes to 4 workers in `genie-optimization-workers/`) |
+| **Workers Used** | `semantic-layer/01-metric-views-patterns`, `02-databricks-table-valued-functions`, `03-genie-space-patterns`, `04-genie-space-export-import-api` |
 | **Duration** | 3-5 hours |
 
 **What it does:**

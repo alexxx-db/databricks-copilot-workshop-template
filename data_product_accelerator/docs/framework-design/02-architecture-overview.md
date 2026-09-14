@@ -161,7 +161,7 @@ project_root/
 │   ├── ml/                             # 1 orchestrator skill
 │   ├── monitoring/                     # 5 skills
 │   ├── planning/                       # 1 skill
-│   ├── semantic-layer/                 # 10 skills (incl. optimization orchestrator + 4 workers)
+│   ├── semantic-layer/                 # 10 skills
 │   ├── silver/                         # 3 skills
 │   └── skill-navigator/               # Navigator skill (full version)
 ├── context/

@@ -9,7 +9,7 @@ description: >
   genie-space-export-import-api) and common skills
   (databricks-asset-bundles, databricks-expert-agent, databricks-python-imports).
   Use when building the semantic layer end-to-end, creating Metric Views and TVFs for Genie,
-  or setting up Genie Spaces. For Genie optimization, use genie-optimization-orchestrator directly.
+  or setting up Genie Spaces.
 license: Apache-2.0
 clients: [ide_cli, genie_code]
 bundle_resource: jobs
@@ -100,7 +100,6 @@ The previous "stop before deployment for any non-Gold workshop draft" guardrail 
 | Only need TVFs? | Read `semantic-layer/02-databricks-table-valued-functions/SKILL.md` directly |
 | Only need Genie Space setup? | Read `semantic-layer/03-genie-space-patterns/SKILL.md` directly |
 | Need Genie API automation? | Read `semantic-layer/04-genie-space-export-import-api/SKILL.md` directly |
-| Need to optimize Genie accuracy? | Read `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` directly |
 | Authoring Discover domains / Pages / a routing Page (Genie Accelerator track)? | Read `semantic-layer/06-genie-discover-ontology/SKILL.md` directly — **standalone**, not a pipeline phase (UI-authored, no bundle deploy) |
 
 ### Routing Safety Net
@@ -129,7 +128,6 @@ The previous "stop before deployment for any non-Gold workshop draft" guardrail 
 | `semantic-layer/02-databricks-table-valued-functions` | **MUST read** at Phase 2 | STRING params, Genie compatibility, null safety |
 | `semantic-layer/03-genie-space-patterns` | **MUST read** at Phase 3 | 8-section deliverable, agent instructions, SQL expressions, benchmark Qs |
 | `semantic-layer/04-genie-space-export-import-api` | **MUST read** at Phase 3 (JSON config) and Phase 6 (API deployment) | REST API JSON schema, programmatic deployment |
-| `semantic-layer/05-genie-optimization-orchestrator` | **External** — run separately after deployment | Benchmark testing, 6 control levers, optimization loop |
 
 ### Enforcement: Confirm Common Skills Read (MANDATORY GATE)
 
@@ -676,10 +674,6 @@ Databricks enforces the `depends_on` chain: Metric Views are created first, then
 
 > This complements the Asset Bundle approach. Phase 5 deploys within a single workspace; Phase 6 enables cross-workspace promotion via the REST API.
 
-### Genie Space Optimization (Separate Step)
-
-> Genie Space optimization is performed **separately after deployment**. Use `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` directly after the semantic layer deployment checkpoint has passed. This ensures the Genie Space is live and queryable before running benchmark tests.
-
 ---
 
 ## Post-Creation Validation
@@ -743,7 +737,6 @@ Databricks enforces the `depends_on` chain: Metric Views are created first, then
 | `databricks-table-valued-functions` | **Mandatory** — TVF patterns | `semantic-layer/02-databricks-table-valued-functions/SKILL.md` |
 | `genie-space-patterns` | **Mandatory** — Genie Space setup | `semantic-layer/03-genie-space-patterns/SKILL.md` |
 | `genie-space-export-import-api` | **Mandatory** — JSON config + API deployment | `semantic-layer/04-genie-space-export-import-api/SKILL.md` |
-| `genie-optimization-orchestrator` | **External** — Run separately after deployment | `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` |
 | `databricks-expert-agent` | **Mandatory** — Extraction principle | `skills/databricks-expert-agent/SKILL.md` |
 | `databricks-asset-bundles` | **Mandatory** — Deployment | `skills/databricks-asset-bundles/SKILL.md` |
 | `databricks-python-imports` | **Mandatory** — Python patterns | `common/databricks-python-imports/SKILL.md` |
