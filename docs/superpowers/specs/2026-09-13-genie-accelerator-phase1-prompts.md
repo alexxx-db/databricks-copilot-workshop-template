@@ -28,7 +28,7 @@ deck's chunking and wording and add **only** the enhancement whitelist below.
   miss to the **5-mode fix table** → **append-only** fixes → **re-run** to **≥85%**. This is exactly
   the tooling in `data_product_accelerator/skills/semantic-layer/03-genie-space-patterns`
   (Rule 12 intake, Rule 17 append-only optimize, the regression-test template, Conversation-API
-  validation). `run-a`'s Step-10 weakness was an *ad-hoc, unclosed* loop — fixed here.
+  validation). `run-a`'s optimize weakness was an *ad-hoc, unclosed* loop — fixed here.
 - **Ex4 Domains + Pages and Ex5 Routing Page** are **core** chapters (were dropped; now restored),
   with explicit caveats: Pages is **Beta**, has **no public create/update API** (authored in the
   Discover UI with Genie Code assisting), and grounds **Genie One** (agent/GC integration is roadmap).
@@ -88,8 +88,10 @@ deck's chunking and wording and add **only** the enhancement whitelist below.
 > - **AI/BI Dashboard (Step 15):** `createAsset(assetType:"dashboard")` then **auto-navigate**
 >   `openAsset(...)` to the **dashboard canvas** — widget editing requires the canvas page; there is no
 >   remote widget edit. Print the clickable dashboard link.
-> - **Pages / Domains (Steps 10–12):** authored in the **Discover UI** (no public API) — navigate to
->   Discover → your domain → the Page editor; Genie Code assists inside it (paste the draft).
+> - **Domains / Pages (Steps 11–13):** authored in the **Discover UI** — **domains + subdomains are
+>   created in the UI directly (the preferred method; a workshop may pre-create the domain)**; Pages
+>   have no public API and are authored in the Discover Page editor with Genie Code assisting (paste
+>   the draft). Navigate to Catalog → Discover → your domain.
 > - **DAB deploy (Step 17):** `bundle deploy` is pinned to the **bundle-editor page** of the bundle
 >   root — open that folder's bundle editor before deploying. A "blocked"/`databricks.yml not found`
 >   message is a **wrong-page signal, not a dead end**.
@@ -132,10 +134,10 @@ without creating it, reply: 'Create the Metric View now, do not just describe it
 | 7 Instructions | Ex3 / 17a | Agent · GC | B | `03-genie-space-patterns` (General Instructions ≤20 lines) |
 | 8 Verified queries (on space) | Ex2 #3 (corrected) | Agent · GC | B | `03-genie-space-patterns`, `04-genie-space-export-import-api` |
 | 9 Load benchmarks (expected SQL) | Ex3 / 17a + 36 | Agent · GC | B | `03-genie-space-patterns` Rule 12 |
-| 10 Domain + subdomains | Ex4 / 22a | Domain & Pages · GC in Discover UI | B | *(skill gap — Discover UI + GC assist)* |
-| 11 Author Pages | Ex4 / 22a | Domain & Pages · GC in Discover UI | B/C | *(skill gap)* |
-| 12 Routing Page | Ex5 / 26a | Routing · GC in Discover UI | B | *(skill gap)* |
-| 13 Validate & Close | Ex3 Optimize + Part 7 / 28 | Validate · GC | B | `03-genie-space-patterns` Rule 17 + regression template |
+| **10 Optimize (run → fix → re-run)** | Ex3 Optimize + Part 7 / 28 | Agent · GC | B | `03-genie-space-patterns` Rule 17 + regression template |
+| 11 Domain + subdomains | Ex4 / 22a | Domain & Pages · **Discover UI (preferred)** | B | *(skill gap — Discover UI; GC assist optional)* |
+| 12 Author Pages | Ex4 / 22a | Domain & Pages · Discover UI | B/C | *(skill gap)* |
+| 13 Routing Page | Ex5 / 26a | Routing · Discover UI | B | *(skill gap)* |
 | 14 Share | Ex6 | Share · everyone | — | — |
 | 15 Dashboard *(optional tail)* | — | Activation · GC | B | AI/BI native |
 | 16 Synced tables → Lakebase → App *(optional tail)* | — | Activation · GC | B | `databricks-lakebase`, `apps_lakebase` skills |
@@ -405,7 +407,7 @@ before save.
 > Workbench is unavailable, Genie Code can create and curate an agent conversationally."* This track
 > runs on Genie Code. The one thing the fallback loses is the **fully-automatic GSO optimizer job**
 > (Workbench-only). We recover the *optimization outcome* with the **benchmark curation loop** in
-> Step 13 — the same benchmarks-with-expected-answers, run via the Conversation API and fixed with
+> Step 10 — the same benchmarks-with-expected-answers, run via the Conversation API and fixed with
 > the 5-mode table. Surface Workbench Auto-Optimize in "how it works" as the richer, hands-off
 > alternative for teams who install it.
 
@@ -524,12 +526,63 @@ against itself scores well and means nothing. Record the gate result in .vibecod
 
 **Golden transcript should show:** 10–15 benchmarks **each with expected SQL**, an explicit "verify
 these answers yourself" stop, and at least one real question answered correctly by the live space.
-**The expected-answer-per-benchmark requirement is what makes the Step-13 optimize loop possible** —
+**The expected-answer-per-benchmark requirement is what makes the Step-10 optimize loop possible** —
 this is the deck's "expected answers are required" rule, and the thing `run-a` skipped.
 
 ---
 
-## Chapter: Domain & Pages  *(deck Exercise 4 — CORE; Genie Code assists in the Discover UI)*
+### Step 10 — Optimize: Run Benchmarks → Fix → Re-run  *(deck Ex3 Optimize "Run Benchmarks" + Part 7, slide 28 — the GC-native optimize loop)*
+
+**Leans on:** `03-genie-space-patterns` Rule 17 (**append-only** optimize — never replace validated
+instructions) + the **benchmark regression template** + Conversation-API validation
+(`assets/templates/genie-space-regression-test.py`). **Navigation:** the run uses the Conversation
+API (`ask_genie`) from any workspace surface; the fixes edit the existing space. **Gate:** benchmarks
+run via the Conversation API; each failure triaged to ONE curation fix (the 5-mode table); fixes
+**appended**; re-run with an improved rate; before/after pass rate recorded to `.vibecoding-state.md`.
+Accuracy target is *guidance*, **~85%** (§11 Q5) — not a hard gate.
+
+> **Why here (before Domains/Pages):** this loop optimizes the **Genie space** against its own
+> benchmarks — it depends only on the Metric View + instructions + verified queries built in Steps
+> 4–9, not on Domains/Pages (which ground **Genie One**, not this space's benchmark run). So you get a
+> working, scored agent *first*, then layer on the broader ontology (Steps 11–13).
+>
+> **This is the optimization the deck calls for, done the way Genie Code can actually invoke it.** The
+> automatic **Workbench GSO job is Workbench-only**; here Genie Code runs the loop itself via
+> `ask_genie`. The `run-a` weakness was stopping after "propose a fix" — this step **closes the loop**
+> (apply → re-run → score).
+
+```
+Read docs/genie_brief.md and .vibecoding-state.md first.
+
+Run all the benchmark questions against this Genie space using the Conversation API. For each one,
+show: the question, the SQL Genie chose, the answer, and whether it matched the expected answer and
+obeyed the brief's guardrails. Report the overall pass rate.
+
+For every miss, diagnose the root cause and map it to ONE curation fix using this table:
+  Right measure not found       → add synonyms (on the Metric View)   (most common)
+  Wrong source found            → tighten scope in the instructions
+  Outdated pattern used         → mark the asset deprecated
+  Critical filter missed        → add it to the instructions
+  Tables joined wrongly         → add a join hint or a verified query
+
+Show me the fixes before applying them. APPEND new rules to the existing instruction block — never
+replace it (existing rules were already validated). Then re-run the benchmarks and show me the
+before/after pass rates. Aim for ~85% on the questions I verified — don't chase 100%. Record the
+before/after pass rate in .vibecoding-state.md.
+```
+
+**Golden transcript should show:** a baseline pass rate, a failure→fix mapping per failure (each fix
+from the 5-mode table), **applied append-only fixes**, and a **re-run** with an improved rate — the
+fixes being *curation* (synonyms, scope, instructions, verified queries), not model changes.
+
+> **Domain scoping is an *additional* retrieval lever that lands in Ex4 (Steps 11–13).** Once a domain
+> exists, "wrong source found" can also be fixed by scoping with a domain / a routing Page; you may
+> re-run this loop after Ex4 to capture that gain. In v1 the first optimize pass uses instruction
+> scoping only, since the domain isn't built yet.
+
+---
+
+## Chapter: Domain & Pages  *(deck Exercise 4 — CORE; created in the Discover UI)*
 
 > **Beta caveats (state them in the app's "how it works"):** Pages is **Beta**; it has **no public
 > create/update API** — Pages are authored in the **Discover UI** with Genie Code assisting inside
@@ -538,30 +591,37 @@ this is the deck's "expected answers are required" rule, and the thing `run-a` s
 > the roadmap. You need **Manage Discovery** permission on the domain. *(Skill gap: no dedicated
 > Domains/Pages skill in the repo yet — candidate Phase-2 skill.)*
 
-### Step 10 — Model the Domain + Subdomains  *(deck Ex4 · prompt 1, slide 22a)*
+### Step 11 — Model the Domain + Subdomains  *(deck Ex4 · prompt 1, slide 22a)*
 
-**Navigation:** authored in the **Discover UI** (no public API) — navigate to **Catalog → Discover**
-and create the domain there; Genie Code assists in the editor. Needs **Manage Discovery** permission.
-**Gate:** a domain with 3–5 subdomains created; the domain + subdomain IDs captured to
-`.vibecoding-state.md` for later steps.
+**Preferred method — create it in the Discover UI (not Genie Code).** Domains and subdomains are a
+few clicks in the UI and easiest to see there: navigate to **Catalog → Discover → New domain**, add
+3–5 subdomains, and note the domain + subdomain IDs. Needs **Manage Discovery** permission.
+
+> **If the workshop pre-creates a domain, use it** — skip creation entirely; just open it in Discover
+> and capture its domain + subdomain IDs. The app can pre-fill `{domain}` with the workshop domain so
+> everyone shares one clean taxonomy.
+
+**Navigation:** Discover UI (Catalog → Discover). **Gate:** a domain with 3–5 subdomains exists (new
+or pre-created); its domain + subdomain IDs captured to `.vibecoding-state.md` for later steps.
+
+*Optional Genie Code assist (fallback only — prefer the UI above):*
 
 ```
 Read docs/design_prd.md and .vibecoding-state.md first — the domain scope follows the PRD.
 
-Create a domain called <domain> with these subdomains: <subdomain_1>, <subdomain_2>, <subdomain_3>.
+If a domain called <domain> already exists, use it — just show me its domain and subdomain IDs.
+Otherwise create a domain called <domain> with these subdomains: <subdomain_1>, <subdomain_2>,
+<subdomain_3>, covering <one sentence describing scope> for <function>.
 
-The domain covers <one sentence describing scope> for <function>.
-
-Then show me the domain and subdomain IDs so I can reference them later, and save them to
-.vibecoding-state.md.
+Either way, show me the domain and subdomain IDs and save them to .vibecoding-state.md.
 ```
 
-**Golden transcript should show:** a domain + 3–5 subdomains created, IDs echoed and saved to state,
-no Pages authored yet.
+**Golden transcript / result should show:** a domain + 3–5 subdomains present (created in the UI or
+reused from the workshop), IDs saved to state, no Pages authored yet.
 
 ---
 
-### Step 11 — Author Pages  *(deck Ex4 · prompt 2 + bulk-import prompt 3, slide 22a)*
+### Step 12 — Author Pages  *(deck Ex4 · prompt 2 + bulk-import prompt 3, slide 22a)*
 
 **Navigation:** authored in the **Discover UI Page editor** (no public create/update API) — navigate
 to Discover → your `<domain>` → the `<subdomain>` → **New Page**; Genie Code drafts the fields inside
@@ -591,7 +651,7 @@ Page IDs to .vibecoding-state.md.
 
 ```
 I have an existing glossary at <byo_glossary_file>. Import these as Pages into the domain with ID
-<domain_id from Step 10>. Map each term to a Page with a definition, synonyms, and related assets.
+<domain_id from Step 11>. Map each term to a Page with a definition, synonyms, and related assets.
 
 Show me the first three before creating all of them.
 ```
@@ -605,7 +665,7 @@ mean the domain **name** was passed where the internal **ID** is needed, or miss
 
 ## Chapter: Routing Page  *(deck Exercise 5 — CORE)*
 
-### Step 12 — Write the Routing Page  *(deck Ex5 · prompt, slide 26a)*
+### Step 13 — Write the Routing Page  *(deck Ex5 · prompt, slide 26a)*
 
 **Navigation:** authored in the **Discover UI Page editor** (no public API) — navigate to Discover →
 your `<domain>` → **New Page**. **Gate:** one Routing Page covering every measure in the signed-off
@@ -634,48 +694,13 @@ with a lookup a person already got right.)*
 
 ---
 
-## Chapter: Validate & Close  *(deck Exercise 3 Optimize "Run Benchmarks" + Part 7, slide 28)*
+## Chapter: Close  *(deck Part 7 curation checklist, slide 29)*
 
-### Step 13 — Run Benchmarks → Fix → Re-run  *(the GC-native optimize loop)*
+> The optimize loop that reads the score and applies fixes is **Step 10** (end of the Agent chapter,
+> before Domains/Pages). This close is the deck's "what done looks like" summary — run it after
+> Ex4/Ex5 so the per-metric Page rows apply.
 
-**Leans on:** `03-genie-space-patterns` Rule 17 (**append-only** optimize — never replace validated
-instructions) + the **benchmark regression template** + Conversation-API validation
-(`assets/templates/genie-space-regression-test.py`). **Navigation:** the run uses the Conversation
-API (`ask_genie`) from any workspace surface; the fixes edit the existing space. **Gate:** benchmarks
-run via the Conversation API; each failure triaged to ONE curation fix (the 5-mode table); fixes
-**appended**; re-run with an improved rate; before/after pass rate + the curation checklist recorded
-to `.vibecoding-state.md`. Accuracy target is *guidance*, **~85%** (§11 Q5) — not a hard gate.
-
-> **This is the optimization the deck calls for, done the way Genie Code can actually invoke it.** The
-> automatic **Workbench GSO job is Workbench-only**; here Genie Code runs the loop itself via
-> `ask_genie`. The `run-a` weakness was stopping after "propose a fix" — this step **closes the loop**
-> (apply → re-run → score).
-
-```
-Read docs/genie_brief.md and .vibecoding-state.md first.
-
-Run all the benchmark questions against this Genie space using the Conversation API. For each one,
-show: the question, the SQL Genie chose, the answer, and whether it matched the expected answer and
-obeyed the brief's guardrails. Report the overall pass rate.
-
-For every miss, diagnose the root cause and map it to ONE curation fix using this table:
-  Right measure/Page not found  → add synonyms                        (most common)
-  Wrong source found            → tighten scope in the instructions / scope with a domain
-  Outdated pattern used         → mark the asset deprecated
-  Critical filter missed        → add it to the instructions
-  Tables joined wrongly         → add a join hint or a verified query
-
-Show me the fixes before applying them. APPEND new rules to the existing instruction block — never
-replace it (existing rules were already validated). Then re-run the benchmarks and show me the
-before/after pass rates. Aim for ~85% on the questions I verified — don't chase 100%. Record the
-before/after pass rate and the curation checklist in .vibecoding-state.md.
-```
-
-**Golden transcript should show:** a baseline pass rate, a failure→fix mapping per failure (each fix
-from the 5-mode table), **applied append-only fixes**, and a **re-run** with an improved rate — the
-fixes being *curation* (synonyms, scope, instructions, verified queries), not model changes.
-
-**Curation checklist (deck slide 29 — the "done" close, record in state):**
+**Curation checklist (deck slide 29 — record the result in `.vibecoding-state.md`):**
 - *Per metric:* a Page with the formula, full synonyms, domain/subdomain, ≥1 negative rule, pointer
   to the governed source.
 - *Per agent:* scope (in/out), preferred source, 3–5 SQL examples, known caveats.
@@ -749,7 +774,7 @@ target + result to `.vibecoding-state.md`.
 
 Per the design spec §10 Phase 1: run these prompts **by hand on live Genie Code** against **two
 reference schemas**, exercise BYO context **both ways** (drop a file into Genie Code + `/importBI`),
-prove the **Measures-Analysis gate** and the **Step-13 optimize loop**, restore **Ex4/Ex5**, and save
+prove the **Measures-Analysis gate** and the **Step-10 optimize loop**, restore **Ex4/Ex5**, and save
 the resulting **Genie Code transcripts as golden references** under `phase1-evidence/`. Open every run
 with the `vibecoding-state` bootstrap/`enter` and close it with `exit`; capture the
 `.vibecoding-state.md` delta after each step. For **Step 0 (the only Type A step)**, also save the
@@ -770,7 +795,7 @@ with the `vibecoding-state` bootstrap/`enter` and close it with `exit`; capture 
   (elicitation) OR Step 3 (inventory)**. If it surfaced at Step 1, Step 3 must still *record* it in
   the signed-off table. *This is the headline realism check* — if the conflict only appears because
   we told it, the test is invalid.
-- **Optimize loop closes (Step 13):** every benchmark has an expected answer; the loop runs via the
+- **Optimize loop closes (Step 10):** every benchmark has an expected answer; the loop runs via the
   Conversation API, maps each miss to a 5-mode fix, **appends** (not replaces) instruction changes,
   and **re-runs** with a reported before/after pass rate. A transcript that stops at "here's a
   proposed fix" (as `run-a` did) is a **fail** for this check.
@@ -790,7 +815,7 @@ with the `vibecoding-state` bootstrap/`enter` and close it with `exit`; capture 
 
 **Acceptance:** each step reliably (a) triggers the interview, (b) produces its artifact, (c) passes
 its gate, (d) a conflict is discovered unprompted (at Step 1 or Step 3) and recorded in the signed-off
-inventory, and (e) the Step-13 optimize loop closes to a re-run pass rate — text iterated until true,
+inventory, and (e) the Step-10 optimize loop closes to a re-run pass rate — text iterated until true,
 transcripts + state deltas saved under `phase1-evidence/` for Phase 2 to encode against.
 
 ---
@@ -843,12 +868,12 @@ written to `serverless_stable_6t92c3_catalog.revenuescope`. Full transcript in `
   `askGenieSpace` — 11 dims + 5 measures visible); instructions authored lean (correctly cut formulas
   + data-fact %); 3 verified queries saved to the **space**; 15 benchmarks drafted with expected SQL. ✔
 - **⚠️ Degradations (fixed in this r7 rewrite):** the agent was built on the GC path with **no closed
-  optimize loop** — Step 10/Validate stopped at "propose a fix," never re-ran, never scored; **Ex4/Ex5
-  (Domains, Pages, Routing) were skipped entirely.** Step 13 now closes the loop (append-only fixes →
-  re-run → ~85%) and Ex4/Ex5 are restored as core chapters. See
+  optimize loop** — the run stopped at "propose a fix," never re-ran, never scored; **Ex4/Ex5
+  (Domains, Pages, Routing) were skipped entirely.** Step 10 now closes the loop (append-only fixes →
+  re-run → ~85%), placed **before** Domains/Pages, and Ex4/Ex5 are restored as core chapters. See
   `phase1-evidence/run-a/step-05-to-10-agent.md`.
 - **Source vs write target:** `samples.tpch` read-only forced a separate writable schema; Genie Code
-  had to *guess* one → **added `{write_catalog}.{write_schema}` variable** (Conventions + Steps 4/6/12/15).
+  had to *guess* one → **added `{write_catalog}.{write_schema}` variable** (Conventions + Steps 4/6/13/15).
 - **Step 2 (Profile) absorbed:** profiling happened inline during Steps 1 & 3; the standalone ERD beat
   didn't run. *Open decision:* keep Step 2 explicit or fold "produce an ERD" into Step 1 (see spec §4).
 
