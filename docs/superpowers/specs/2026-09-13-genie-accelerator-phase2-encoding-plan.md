@@ -222,6 +222,19 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
   write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
   bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — Regression, Layer A done / Layer B deferred (§4, item 7):** the regression splits by
+  `bypass_llm`. **Layer A (offline, automatable — DONE):** audited every `{token}` across all 23 track
+  files against the app's sanctioned runtime-variable set (§1). *Finding:* the How-It-Works enrichment
+  samples introduced non-canonical shorthand (`{write_catalog}.{schema}_gold` in 63/65/67/68/71, a
+  `{catalog}.{schema}` source node in 61) — **confined to the mermaid/sample blocks, never in any
+  `Input Template`** (the copy-paste prompts were always clean), so no *prompt* drift. Standardized all
+  to canonical `{lakehouse_default_catalog}.{user_schema_prefix}_gold` (source →
+  `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`); re-linted (17 ✅), re-synced (120 blocks
+  steady, idempotent), seed census now **0 non-canonical tokens** (remaining `{id}`/`{dp_bundle_root}`
+  are illustrative code placeholders, matching the existing gold forks). **Layer B (live, needs a human
+  at Genie Code — DEFERRED by user):** re-run `run-a` tail (Steps 10–14) + `run-b` end-to-end against
+  the *encoded* prompts to certify gates / unprompted-conflict / optimize-loop still fire; transcripts
+  to land under `phase1-evidence/`.
 - **2026-09-14 — "How It Works" enrichment (all 17 track DEFAULT sections):** brought the teaching
   blocks on every `semlayer_*`/`gagent_*`/`ontology_*`/`gaccel_*` DEFAULT section (ids 60–76) up to the
   seed's **gold-standard** format (studied `05-deploy_databricks_app`, `33-activation_reverse_sync`).
