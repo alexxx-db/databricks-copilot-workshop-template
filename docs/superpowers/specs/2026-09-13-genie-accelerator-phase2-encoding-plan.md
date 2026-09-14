@@ -222,6 +222,16 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
   write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
   bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — "How It Works" enrichment (all 17 track DEFAULT sections):** brought the teaching
+  blocks on every `semlayer_*`/`gagent_*`/`ontology_*`/`gaccel_*` DEFAULT section (ids 60–76) up to the
+  seed's **gold-standard** format (studied `05-deploy_databricks_app`, `33-activation_reverse_sync`).
+  Each now has: a **mermaid flowchart** in `2️⃣ What Are We Building?`; the `3️⃣ Why … (Databricks Best
+  Practices)` heading + a fuller table; `4️⃣ What Happens Behind the Scenes?` rewritten as **numbered
+  steps + a `### Reference:` subsection**; and an **Expected Output sample** (sample brief / inventory
+  table / MEASURE() proof / instruction block / benchmark row / before-after pass rate / routing table /
+  synced-table resolution / bundle layout) beside the checklist. All 17 `✅` under
+  `lint_section_prompts.py`; scoped-synced into the seed via a one-shot `_hiw_sync.py` (replaced 17
+  existing blocks, count steady at 120, re-run byte-identical, apostrophes double-escaped) then deleted.
 - **2026-09-14 — Batch 4 encoded (§4, item 5):** authored `sections/74–76-gaccel_*.md` (DEFAULT,
   `bypass_llm=true`, LIGHT) + `sections/99-gaccel_{dashboard,activation,productionize}.genie-code.md`
   (forks, `input_id` 940/941/942). Scoped-appended via a one-shot `_batch4_sync.py` (reused
