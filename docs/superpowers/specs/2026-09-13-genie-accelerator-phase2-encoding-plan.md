@@ -189,9 +189,15 @@ Exact numbers confirmed against the app's track/visibility-gating when Batch 1 i
    already exists — `data_product_accelerator/skills/semantic-layer/06-genie-discover-ontology`, the
    REFERENCE + DRAFTING-CONTRACT skill — so no skill needed authoring; the sections point at it. The
    earlier "skill gap" note was stale.)*
-5. **Batch 4 — Tail hand-off (Steps 15–17):** wire the track's close to the existing
-   `deploy_di_assets` (24) / `aibi_dashboard` (14) / `activation_*`; add a light `aibi_dashboard`
-   genie-code fork only if the dashboard-on-Metric-View beat needs it. No new monolith authoring.
+5. **[DONE 2026-09-14] Batch 4 — Tail hand-off (Steps 15–17):** authored the track's own **light
+   `gaccel_*`** tail sections (`order_number`/`input_id` 74/75/76: Dashboard, Synced→Lakebase→App,
+   Productionize DAB) + three genie-code forks (`input_id` 940/941/942). The heavy manifest sections
+   (`aibi_dashboard` 14 / `activation_*` / `deploy_di_assets` 24) are **left untouched**; the light
+   sections *route to* them (and to `databricks-lakebase`/`apps_lakebase`/`databricks-asset-bundles`)
+   rather than duplicate. Dashboard fork = light router to Genie Code's **native** AI/BI dashboard
+   skill (canvas nav only). Activation section syncs the **Gold dims+facts behind the Metric View**
+   (views aren't syncable) so the app has real rows — reuses the `activation_reverse_sync` REST
+   contract. All six scoped-appended (parser now 120 blocks) and **pass `lint_section_prompts.py`**.
 6. **"How it works"** content (deck-derived) for the app's explainer surface.
 7. **Regression:** re-run `run-a`/`run-b` prompts against the *app-generated* text to confirm encoded
    sections reproduce the validated prompts verbatim (Type B/C) or faithfully (Type A PRD).
@@ -216,6 +222,21 @@ Phase-1 golden transcripts in `phase1-evidence/`.
   932/933). Tokens mapped per §1: source `{chapter_3_lakehouse_catalog}.{chapter_3_lakehouse_schema}`,
   write `{lakehouse_default_catalog}.{user_schema_prefix}_gold`, function `{use_case_title}`. Prompt
   bodies are the Phase-1-validated Steps 1–5 verbatim. All seven `✅` under `lint_section_prompts.py`.
+- **2026-09-14 — Batch 4 encoded (§4, item 5):** authored `sections/74–76-gaccel_*.md` (DEFAULT,
+  `bypass_llm=true`, LIGHT) + `sections/99-gaccel_{dashboard,activation,productionize}.genie-code.md`
+  (forks, `input_id` 940/941/942). Scoped-appended via a one-shot `_batch4_sync.py` (reused
+  `build_insert_block`/`parse_markdown`, then deleted); parser now sees **120 blocks**; all six `✅`
+  under `lint_section_prompts.py`; apostrophes double-escaped; append is idempotent (re-run skips all).
+  **Decision (supersedes the §2 "REUSE existing" tail note):** the heavy manifest sections
+  (`aibi_dashboard` 14 / `activation_*` / `deploy_di_assets` 24) are manifest/DAB-bound and don't fit
+  the conversational track, and per user direction must not be changed — so the tail is the track's own
+  **light `gaccel_*`** sections that *route to* those sections + skills, not duplicates.
+  **Two user asks honored:** (1) the Activation section syncs the **Gold dimension + fact tables behind
+  the Metric View** — explicitly NOT the Metric View (views aren't syncable) and "every dim + fact the
+  app needs, not just one" — so the eventual app has meaningful rows; it reuses the proven
+  `activation_reverse_sync` REST/PK/CDF/cost mechanics. (2) the Dashboard beat is a **light router to
+  Genie Code's native AI/BI dashboard skill** (canvas nav only), not the heavy bundle/extract-back
+  runbook. Same gitignore/working-copy caveat as Batches 1–3.
 - **2026-09-14 — Batch 3 encoded (§4.4):** authored `sections/70–72-ontology_*.md` (DEFAULT,
   `bypass_llm=true`, UI-preferred) + `sections/99-ontology_{domain,pages,routing}.genie-code.md`
   (forks, `input_id` 936/937/938). Parser now sees 114 blocks; all six `✅` under
