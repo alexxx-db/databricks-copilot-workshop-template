@@ -605,8 +605,9 @@ fixes being *curation* (synonyms, scope, instructions, verified queries), not mo
 > create/update API** — Pages are authored in the **Discover UI** with Genie Code assisting inside
 > the Page editor (expect to paste a draft rather than have it created headlessly). Pages currently
 > ground **Genie One** answers (shown as citations); integration with Genie Agents / Genie Code is on
-> the roadmap. You need **Manage Discovery** permission on the domain. *(Skill gap: no dedicated
-> Domains/Pages skill in the repo yet — candidate Phase-2 skill.)*
+> the roadmap. You need **Manage Discovery** permission on the domain. *(Skill:
+> `data_product_accelerator/skills/semantic-layer/06-genie-discover-ontology` — the reference +
+> drafting contract for Steps 11–13.)*
 
 ### Step 11 — Model the Domain + Subdomains  *(deck Ex4 · prompt 1, slide 22a)*
 

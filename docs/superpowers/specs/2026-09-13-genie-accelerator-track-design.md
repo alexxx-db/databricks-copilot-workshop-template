@@ -136,6 +136,17 @@ deck's canonical prompts and admits **only** the enhancement whitelist below.
      assisting), and grounds **Genie One** (agent/GC integration is roadmap). Ex4 = domain +
      subdomains + author Pages (deck 22a); Ex5 = Routing Page (deck 26a).
 
+**Revision (2026-09-13, r8) — Genie Ontology skill now exists + variable mapping corrected:**
+- **New skill `semantic-layer/06-genie-discover-ontology`** backs Steps 11–13 (Ex4/Ex5): a thin
+  **reference + drafting-contract** skill (no automation — Pages have no public create/update API, so
+  Genie Code drafts in the Discover UI and a human publishes). Closes the earlier "skill gap." Numbered
+  `06` to avoid colliding with the reserved `05` slot.
+- **No new runtime variables** (corrected against the app repo): source =
+  `{chapter_3_lakehouse_catalog/schema}` (`LakehouseParamsEditor`), write = `{lakehouse_default_catalog}`
+  + `GoldTableTargetEditor`; metric-view name → Genie Code suggests; domain/subdomains → UI-first; BYO
+  glossary/BI → uploaded. Step 1 reuses the existing extract/upload/generate mode-tab; Step 4 gets an
+  Import BI tab with a promote-local→UC beat.
+
 ---
 
 ## 1. Purpose & goals

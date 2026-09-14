@@ -101,6 +101,7 @@ The previous "stop before deployment for any non-Gold workshop draft" guardrail 
 | Only need Genie Space setup? | Read `semantic-layer/03-genie-space-patterns/SKILL.md` directly |
 | Need Genie API automation? | Read `semantic-layer/04-genie-space-export-import-api/SKILL.md` directly |
 | Need to optimize Genie accuracy? | Read `semantic-layer/05-genie-optimization-orchestrator/SKILL.md` directly |
+| Authoring Discover domains / Pages / a routing Page (Genie Accelerator track)? | Read `semantic-layer/06-genie-discover-ontology/SKILL.md` directly — **standalone**, not a pipeline phase (UI-authored, no bundle deploy) |
 
 ### Routing Safety Net
 

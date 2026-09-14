@@ -97,9 +97,9 @@ Type → `bypass_llm`: **A = false** (FM-API generates), **B/C = true** (verbati
 | 8 Verified queries | `gagent_verified` | **Genie Agent (NEW track)** | B → true | no | NEW | `03-genie-space-patterns` |
 | 9 Load benchmarks | `gagent_benchmarks` | **Genie Agent (NEW track)** | B → true | no | NEW | `03-genie-space-patterns` Rule 12 |
 | 10 **Optimize loop** | `gagent_optimize` | **Genie Agent (NEW track)** | B → true | yes (Conversation API run) | NEW *(GC-native; ≠ `optimize_genie`)* | `03-genie-space-patterns` Rule 17 |
-| 11 Domain + subdomains | `ontology_domain` | **Genie Ontology (NEW track)** | B → true | yes (**Discover UI preferred** + pre-created fallback) | NEW | *(skill gap)* |
-| 12 Author Pages | `ontology_pages` | **Genie Ontology (NEW track)** | B/C → true | yes (Discover UI Page editor) | NEW | *(skill gap)* |
-| 13 Routing Page | `ontology_routing` | **Genie Ontology (NEW track)** | B → true | yes (Discover UI) | NEW | *(skill gap)* |
+| 11 Domain + subdomains | `ontology_domain` | **Genie Ontology (NEW track)** | B → true | yes (**Discover UI preferred** + pre-created fallback) | NEW | `semantic-layer/06-genie-discover-ontology` |
+| 12 Author Pages | `ontology_pages` | **Genie Ontology (NEW track)** | B/C → true | yes (Discover UI Page editor) | NEW | `semantic-layer/06-genie-discover-ontology` |
+| 13 Routing Page | `ontology_routing` | **Genie Ontology (NEW track)** | B → true | yes (Discover UI) | NEW | `semantic-layer/06-genie-discover-ontology` |
 | 14 Share | `gagent_share` | **Genie Agent (NEW track)** | B → true | no | NEW | — |
 | 15 Dashboard *(tail)* | `aibi_dashboard` | **AI/BI Dashboard (reuse)** | B → true | optional fork | REUSE / hand-off | AI/BI native |
 | 16 Synced→Lakebase→App *(tail)* | `activation_*` | **Activation (reuse)** | B → true | — | REUSE / hand-off | `databricks-lakebase`, `apps_lakebase` |
