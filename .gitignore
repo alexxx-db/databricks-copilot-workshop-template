@@ -111,3 +111,6 @@ skill_manifest.txt
 
 # Agents on Databricks slide outline (working draft, not source)
 presentations/agents-on-databricks-outline.md
+
+# Superpowers design specs (feature-branch working docs; excluded from main)
+docs/superpowers/

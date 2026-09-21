@@ -74,8 +74,17 @@ it and capture the IDs.
 - Genie Code's role here is *read-only assist*: show the IDs, confirm the taxonomy matches the PRD.
 - **Gate:** a domain with 3–5 subdomains exists (new or pre-created); IDs saved to state.
 
-Prompt template (do not duplicate here): **Step 11** in
-`docs/superpowers/specs/2026-09-13-genie-accelerator-phase1-prompts.md`.
+*Optional Genie Code assist (fallback only — prefer the UI above):*
+
+```
+Read docs/design_prd.md and .vibecoding-state.md first — the domain scope follows the PRD.
+
+If a domain called <domain> already exists, use it — just show me its domain and subdomain IDs.
+Otherwise create a domain called <domain> with these subdomains: <subdomain_1>, <subdomain_2>,
+<subdomain_3>, covering <one sentence describing scope> for <function>.
+
+Either way, show me the domain and subdomain IDs and save them to .vibecoding-state.md.
+```
 
 ---
 
