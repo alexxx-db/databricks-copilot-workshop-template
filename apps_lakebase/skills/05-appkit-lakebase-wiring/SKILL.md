@@ -155,6 +155,8 @@ CREATE TABLE IF NOT EXISTS ${DB_SCHEMA}.bookings ( ... );
 
 This prevents collisions when multiple apps share a Lakebase database. All DDL, queries, and grants must use `${DB_SCHEMA}` consistently.
 
+> **`DB_SCHEMA` is a SINGLE Postgres schema name — never a dotted UC FQN.** It must be one identifier (hyphens → underscores, e.g. `jane_d_booking_app`); a `catalog.schema` Unity Catalog FQN with a `.` is **not** a valid Postgres schema and quoting it as one silently breaks GRANTs and `search_path`. For a **read-only app over already-synced tables** (the activation reverse-ETL track), do not trust the `DB_SCHEMA` template literal at all — the schema NAME the sync actually landed (from `information_schema` introspection / `reverse_etl.md`) is authoritative; use the introspected value everywhere and reject a dotted one.
+
 ### 1d. Write Idempotent DDL
 
 All DDL runs on every app startup. It must be safe to execute repeatedly.

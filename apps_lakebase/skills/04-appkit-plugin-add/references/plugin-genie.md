@@ -42,9 +42,25 @@ env:
   - name: DATABRICKS_GENIE_SPACE_ID
     description: "Default Genie Space ID"
     value: "<your-genie-space-id>"
+user_api_scopes:
+  - dashboards.genie
 ```
 
 **Finding your Space ID:** Open your Genie space in Databricks, go to the **About** tab, and copy the Space ID.
+
+### Identity and OAuth scope (required)
+
+The `genie()` plugin executes the Conversation API **on-behalf-of the signed-in user** — its tools require user context, so the plugin authenticates with the forwarded `x-forwarded-access-token`. That token only carries Genie access when the app declares the scope, so `app.yaml` **MUST** include:
+
+```yaml
+user_api_scopes:
+  - dashboards.genie
+```
+
+- **Symptom when missing:** the deployed chat fails with `Provided OAuth token does not have required scopes: genie` while the rest of the app keeps working. (`x-forwarded-access-token` is only present when `user_api_scopes` is declared.)
+- **Space + data grants:** the app service principal needs `CAN_RUN` on the Genie space for the plugin to reach the Conversation API at all; because queries run as the signed-in user, that user needs `CAN_RUN` on the space and `SELECT` on its data sources (the query honors their own Unity Catalog grants).
+- **Deploys can wipe scopes:** a full-replacement deploy (`apps update` / `bundle run`) can drop `user_api_scopes` — re-apply and re-verify it after every deploy.
+- Do not set `DATABRICKS_HOST`/`DATABRICKS_CLIENT_ID`/`DATABRICKS_CLIENT_SECRET` in `app.yaml`; they are auto-injected for the app SP and any override poisons OAuth.
 
 ### 3. Configuration Options
 

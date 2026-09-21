@@ -143,7 +143,7 @@ await appkit.server.start();
 - **Host:** `process.env.FLASK_RUN_HOST || "0.0.0.0"`
 - **Health check:** `GET /health` returns `{ "status": "ok" }`
 - **Frontend (dev):** Vite middleware from `client/`
-- **Frontend (prod):** Static files from `client/dist/`
+- **Frontend (prod):** Static files from `client/dist/`. `server()` auto-detects the client bundle from a project-root-relative dir — `dist`, `client/dist`, `build`, `public`, or `out` (`build/` is **NOT** reserved; the server bundle also emits to `build/index.mjs`). **Keep the scaffold's `client/vite.config.ts` (its `outDir` defaults to `client/dist`). Do NOT relocate the vite config to the project root or set `root: "client"` + `outDir: "../dist/client"` (the FastAPI/Vite convention)** — that emits `dist/client/`, which is in none of the auto-detected dirs, so the app deploys GREEN but returns `Cannot GET /`. If a non-standard `outDir` is unavoidable, pass `server({ staticPath: "<resolved-dir>" })` to match.
 
 ## Live Documentation
 
