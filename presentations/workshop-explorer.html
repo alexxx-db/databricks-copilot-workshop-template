@@ -122,6 +122,10 @@ button{font-family:inherit;}
 .sc-a4{border-color:var(--purple);} .sc-a4 .sn-num{color:var(--purple);}
 .sc-a5{border-color:var(--green);} .sc-a5 .sn-num{color:var(--green);}
 .sc-a6{border-color:var(--gold);} .sc-a6 .sn-num{color:var(--gold);}
+.sc-e1{border-color:var(--cyan);} .sc-e1 .sn-num{color:var(--cyan);}
+.sc-e2{border-color:var(--blue);} .sc-e2 .sn-num{color:var(--blue);}
+.sc-e3{border-color:var(--teal);} .sc-e3 .sn-num{color:var(--teal);}
+.sc-e4{border-color:var(--green);} .sc-e4 .sn-num{color:var(--green);}
 
 /* ==================== MODE 2: GUIDED TOURS ==================== */
 #tours.active{display:flex;flex-direction:column;height:calc(100vh - 53px);}
@@ -453,7 +457,8 @@ body.light .tour-card.active{box-shadow:0 4px 16px rgba(226,55,29,.15);}
       <div class="stat"><div class="stat-num">5</div><div class="stat-label">App Phases</div></div>
       <div class="stat"><div class="stat-num">19</div><div class="stat-label">Agent Lifecycle</div></div>
       <div class="stat"><div class="stat-num">19</div><div class="stat-label">Platform Modules</div></div>
-      <div class="stat"><div class="stat-num">4</div><div class="stat-label">Guided Tours</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Guided Tours</div></div>
+      <div class="stat"><div class="stat-num">17</div><div class="stat-label">Genie Track Steps</div></div>
     </div>
 
     <!-- DPA Galaxy -->
@@ -489,6 +494,14 @@ body.light .tour-card.active{box-shadow:0 4px 16px rgba(226,55,29,.15);}
       <div class="subtitle">From agent spec to production monitoring. Click any stage; dots are the steps within it.</div>
       <div class="pipeline-flow" id="agentFlow"></div>
     </div>
+
+    <!-- Genie Accelerator Galaxy -->
+    <div class="galaxy-section" style="text-align:center;">
+      <div class="galaxy-label" style="text-align:center;">Genie Accelerator</div>
+      <h2>Data to Genie Agent, End to End</h2>
+      <div class="subtitle">Semantic layer → Genie agent → ontology → activate. Click any act; dots are the steps within it.</div>
+      <div class="pipeline-flow" id="genieAccelFlow"></div>
+    </div>
   </div>
 </div>
 
@@ -510,6 +523,10 @@ body.light .tour-card.active{box-shadow:0 4px 16px rgba(226,55,29,.15);}
     <div class="tour-card" onclick="selectTour('d')" id="tc-d">
       <h3>Tour D: App to Agent</h3>
       <p>Turn the app into a governed agent — tools, memory, auth, then evaluate, deploy, and monitor with MLflow</p>
+    </div>
+    <div class="tour-card" onclick="selectTour('e')" id="tc-e">
+      <h3>Tour E: Data to Genie Agent</h3>
+      <p>Build the semantic layer, stand up a Genie agent, model the ontology, and activate with a dashboard and Lakebase app</p>
     </div>
   </div>
   <div class="tour-controls">
@@ -904,6 +921,70 @@ const SKILLS = [
    code:'from mlflow.genai.scorers import ScorerSamplingConfig\nSafety().register(name="prod_safety")\nSafety().start(sampling_config=ScorerSamplingConfig(sample_rate=0.2))',
    rationale:'The same scorers you built offline become online monitors: sample live traffic, score continuously, and alert when groundedness or safety trend down. Hard real-world failures feed back into the eval dataset — closing the loop.',
    prompt:'Set up production monitoring.\nRead @apps_lakebase/prompts/sections/56-mlflow_production_monitoring_and_debugging.md',platform:'agent-monitoring'},
+  // --- Genie Accelerator Track (component: gaccel) — 4 acts + 17 steps ---
+  {id:'gaccel-sem',name:'Semantic Layer',domain:'gaccel',component:'gaccel',type:'orchestrator',stage:'ga',desc:'Locate data (existing schema, uploaded files, or synthetic), profile the schema, analyze the measures at a sign-off gate, then author a governed Metric View with synonyms.',keywords:['metric view','semantic','measures','governance'],workers:['gaccel-locate','gaccel-profile','gaccel-measures','gaccel-mv','gaccel-syn'],commonDeps:[],platform:'medallion',
+   rationale:'A governed Metric View is the <em>single source of truth</em> every downstream Genie answer and dashboard builds on — so it is designed, gated, and signed off first, before any agent exists.',
+   prompt:'Start the Genie Accelerator: point Genie Code at my data and seed docs/genie_brief.md from the PRD. Do not build yet.'},
+  {id:'gaccel-locate',name:'Locate Data & Bring Context',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Point Genie Code at your data — an existing schema, uploaded glossary/BI files, or synthetic generation — and seed the Genie brief. No building yet.',keywords:['data','context','synthetic','brief'],workers:[],commonDeps:[],platform:'medallion',
+   rationale:'Grounding the whole track in real data plus the brief up front means every later step reasons from <em>truth, not assumptions</em>.',
+   prompt:'Point Genie Code at my data and seed docs/genie_brief.md from the PRD — existing schema, uploaded glossary, or synthetic. Do not build yet.'},
+  {id:'gaccel-profile',name:'Profile Your Schema',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Read-only discovery of the source schema — grains, keys, joins — producing an ERD and candidate measures.',keywords:['profile','ERD','discovery'],workers:[],commonDeps:[],platform:'medallion',
+   rationale:'Profiling before modeling surfaces grains and join paths so the Metric View is built on the <em>real shape</em> of the data.',
+   prompt:'Profile my source schema read-only and draft an ERD plus candidate measures in docs/genie_brief.md.'},
+  {id:'gaccel-measures',name:'Measures Analysis (the Gate)',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Draft a five-measure inventory (definition, source of truth, grain, owner, conflict) and self-discover definitional conflicts. You sign off before any Metric View YAML is written.',keywords:['measures','gate','conflict','sign-off'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'The gate prevents <em>two numbers, same name</em> — Genie Code discovers gross-vs-net and grain traps on its own and recommends one reading, and nothing is authored until you approve.',
+   prompt:'Draft a governed 5-measure inventory and self-discover any definitional conflicts. Show me the table and stop before any Metric View YAML.'},
+  {id:'gaccel-mv',name:'Draft the Metric View',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Author a governed Metric View from the signed-off inventory (Path B), or import a Tableau/Power BI model and promote it to Unity Catalog (Path A).',keywords:['metric view','MEASURE','importBI','YAML'],workers:[],commonDeps:[],platform:'metric-views',
+   rationale:'A UC Metric View encodes <em>MEASURE() semantics once</em> so Genie and dashboards never re-derive the math.',
+   prompt:'Create the Metric View for exactly the signed-off measures with a pre-joined source, then re-run each MEASURE() to prove the numbers.'},
+  {id:'gaccel-syn',name:'Review & Expand Synonyms',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Review and expand the v1.1 synonyms on every measure and key dimension so the informal phrasing people actually use resolves.',keywords:['synonyms','v1.1','aliases'],workers:[],commonDeps:[],platform:'metric-views',
+   rationale:'Synonyms are how Genie maps a user\'s words to governed fields — acronyms, informal names, and legacy terms all point at the same measure.',
+   prompt:'Review the synonyms on my Metric View and expand them for every measure and key dimension. Show me the diff before saving.'},
+  {id:'gaccel-agent',name:'Genie Agent',domain:'gaccel',component:'gaccel',type:'orchestrator',stage:'ga',desc:'Stand up a Genie Agent on the Metric View, add lean instructions and verified queries, load benchmarks with expected SQL, and run the Genie-Code-native optimize loop.',keywords:['genie','agent','benchmarks','optimize'],workers:['gaccel-describe','gaccel-instr','gaccel-verified','gaccel-bench','gaccel-optimize'],commonDeps:[],platform:'genie',
+   rationale:'The agent is only as trustworthy as its guardrails and benchmarks — verified queries plus expected-SQL benchmarks turn <em>looks right</em> into <em>measured right</em>.',
+   prompt:'Create a Genie space on my Metric View and show me the serialized config before you create it.'},
+  {id:'gaccel-describe',name:'Describe the Agent',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Create a Genie space and attach the Metric View as the only data source; review the serialized config before creating.',keywords:['genie space','serialized_space','attach MV'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Binding the space to the governed Metric View — not the raw tables — guarantees every answer uses the <em>signed-off definitions</em>.',
+   prompt:'Create a Genie space that answers my team\'s questions and attach the Metric View as its only data source.'},
+  {id:'gaccel-instr',name:'Author Instructions',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Add lean, rule-shaped general instructions from the brief guardrails, plus a rule to always use MEASURE() and a clear scope boundary.',keywords:['instructions','guardrails','scope'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Short, load-bearing rules beat prose — <em>each guardrail becomes one plain-English line</em> the model reliably follows.',
+   prompt:'Add general instructions to the space: apply every guardrail from the brief as one short rule, always use the Metric View via MEASURE(), and state what is out of scope.'},
+  {id:'gaccel-verified',name:'Add Verified Queries',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Add two or three verified question-to-SQL examples that query the Metric View via MEASURE() with the correct filters.',keywords:['verified queries','example_question_sqls'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Verified queries anchor the most-asked questions to <em>exact governed SQL</em> — the strongest signal in the trust stack.',
+   prompt:'Add verified example queries for the two or three questions my users ask most. Each SQL must use the Metric View via MEASURE(). Show me each pair first.'},
+  {id:'gaccel-bench',name:'Load Benchmarks',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Generate about 15 benchmark questions with expected SQL (correct filter plus MEASURE()), from single-measure lookups to comparisons across time and dimensions.',keywords:['benchmarks','expected SQL','evaluation'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Expected SQL per benchmark is what turns the optimize loop from guesswork into a <em>measurable pass rate</em>.',
+   prompt:'Suggest 15 benchmark questions a user would ask and add them as benchmarks with expected SQL. Then stop — I will verify the expected answers.'},
+  {id:'gaccel-optimize',name:'Optimize Loop',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Run benchmarks, diff actual versus expected, map misses to the 5-mode fix table, apply append-only fixes (synonym, instruction, verified query), and re-run to a target pass rate.',keywords:['optimize','5-mode fix','pass rate'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'This is the Genie-Code-native equivalent of auto-optimization — <em>curate to the target</em> by adding synonyms, instructions, or verified queries, never rewriting.',
+   prompt:'Run the benchmarks against the space. For each miss, propose the smallest fix (instruction, synonym, or verified query), show me, then apply and re-run.'},
+  {id:'gaccel-ont',name:'Genie Ontology',domain:'gaccel',component:'gaccel',type:'orchestrator',stage:'ga',desc:'Model the Discover domain and subdomains, author Pages, and write the routing page so Genie One routes questions to the right space. Beta, UI-preferred.',keywords:['ontology','domain','pages','routing','Genie One'],workers:['gaccel-domain','gaccel-pages','gaccel-routing'],commonDeps:[],platform:'genie',
+   rationale:'Ontology is what lets one Genie front door <em>route across many spaces</em> — the routing page is the deck\'s highest-return exercise.',
+   prompt:'Model the Discover domain and subdomains in the UI (use the pre-created domain if one exists), then draft Pages and a routing page.'},
+  {id:'gaccel-domain',name:'Model the Domain + Subdomains',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Create or reuse a Discover domain and its subdomains (UI-preferred; use the pre-created one if provided). Beta.',keywords:['domain','subdomain','Discover'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Domains are the taxonomy Genie One routes over — <em>shown best in the Discover UI</em>, with Genie Code drafting the content.',
+   prompt:'Draft the domain and subdomain taxonomy for my use case; I will create it in the Discover UI (or reuse the pre-created domain).'},
+  {id:'gaccel-pages',name:'Author Pages',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Draft Discover Pages in the Page editor (UI-driven; no public API). Beta.',keywords:['pages','Discover','curation'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Pages are curated entry points that describe what a space answers — <em>authored in the UI</em>, seeded from the brief.',
+   prompt:'Draft the content for a Discover Page describing what my Genie space answers; I will paste it into the Page editor.'},
+  {id:'gaccel-routing',name:'Write the Routing Page',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Write the routing page so questions land in the right space — the deck\'s highest-return exercise.',keywords:['routing','Genie One','front door'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Good routing is what makes a <em>multi-space Genie feel like one assistant</em>.',
+   prompt:'Draft a routing page that sends each kind of question to the right Genie space based on the domain taxonomy.'},
+  {id:'gaccel-activate',name:'Activate',domain:'gaccel',component:'gaccel',type:'orchestrator',stage:'ga',desc:'Prove the agent, build an AI/BI dashboard on the Metric View, sync Gold dimensions and facts into Lakebase to power an app, and optionally package everything as a Databricks Asset Bundle.',keywords:['dashboard','synced tables','lakebase','DAB'],workers:['gaccel-share','gaccel-dash','gaccel-sync','gaccel-dab'],commonDeps:[],platform:'lakebase',
+   rationale:'Activation turns a governed agent into a <em>shipped product</em> — synced tables plus an app make the semantics tangible to end users.',
+   prompt:'Show my agent answering the headline questions, then build a dashboard and sync the Gold tables to Lakebase for the app.'},
+  {id:'gaccel-share',name:'Show Your Agent',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'A proof beat: ask the agent the brief headline questions and confirm the answers are governed and correct.',keywords:['proof','demo','verify'],workers:[],commonDeps:[],platform:'genie',
+   rationale:'Proving it end-to-end on real questions is the <em>checkpoint before activation</em>.',
+   prompt:'Ask my Genie agent the headline questions from the brief and confirm each answer uses the Metric View.'},
+  {id:'gaccel-dash',name:'Dashboard on the Metric View',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Light router to Genie Code\'s native AI/BI dashboard skill, built on the same Metric View.',keywords:['AI/BI','dashboard','metric view'],workers:[],commonDeps:[],platform:'aibi',
+   rationale:'One Metric View powering both Genie and the dashboard <em>guarantees the numbers match</em> everywhere.',
+   prompt:'Build an AI/BI dashboard on my Metric View using Genie Code\'s dashboard skill.'},
+  {id:'gaccel-sync',name:'Synced Tables → Lakebase → App',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Sync the Gold dimensions and facts (not the Metric View) into Lakebase, then wire an AppKit app that serves them.',keywords:['synced tables','lakebase','app'],workers:[],commonDeps:[],platform:'lakebase',
+   rationale:'Syncing the base tables — not just the Metric View — gives the app <em>real rows to serve</em>, making the semantics tangible.',
+   prompt:'Sync my Gold dimensions and facts into Lakebase and wire an AppKit app that reads them.'},
+  {id:'gaccel-dab',name:'Productionize as a Bundle',domain:'gaccel',component:'gaccel',type:'worker',stage:'ga',desc:'Light hand-off: package the Metric View, Genie export, dashboard, and synced-table specs into a Databricks Asset Bundle.',keywords:['DAB','bundle','productionize'],workers:[],commonDeps:[],platform:'medallion',
+   rationale:'A bundle makes the whole track <em>redeployable and governed</em> — the productionization boundary.',
+   prompt:'Package the Metric View, Genie space export, dashboard, and synced-table specs as a Databricks Asset Bundle.'},
 ];
 
 const SKILL_MAP = {};
@@ -937,6 +1018,13 @@ const AGENT_STAGES = [
   {num:'4',label:'Integrate',sc:'sc-a4',orch:'ag-evaldeploy'},
   {num:'5',label:'Eval & Govern',sc:'sc-a5',orch:'ag-prompts'},
   {num:'6',label:'Ship & Operate',sc:'sc-a6',orch:'ag-gateway'},
+];
+
+const GENIE_STAGES = [
+  {num:'1',label:'Semantic Layer',sc:'sc-e1',orch:'gaccel-sem'},
+  {num:'2',label:'Genie Agent',sc:'sc-e2',orch:'gaccel-agent'},
+  {num:'3',label:'Genie Ontology',sc:'sc-e3',orch:'gaccel-ont'},
+  {num:'4',label:'Activate',sc:'sc-e4',orch:'gaccel-activate'},
 ];
 
 // ======================== TOUR DATA ========================
@@ -1163,6 +1251,61 @@ const TOURS = {
       {narration:'<strong>Agent lifecycle complete!</strong> From spec to production monitoring — an agent that is tooled, remembers, respects permissions, is evaluated, governed, and watched. And every failure feeds the next iteration.',tier:[1,'Complete'],
        summary:true},
     ]
+  },
+  e: {
+    name:'Data to Genie Agent',
+    tree: buildGenieAccelTree(),
+    steps: [
+      {expand:['tge-root'],activate:['tge-n-root'],narration:'<span class="hl">From raw data to a governed Genie agent.</span> Build the semantic layer, stand up the agent, model the ontology, then activate with a dashboard and a Lakebase-backed app.',tier:[1,'Tier 1: Overview'],
+       designRationale:'The Genie Accelerator is a four-act track where the <em>semantic layer comes first</em>. A governed Metric View is authored and signed off before any agent exists, so every downstream answer, benchmark, and dashboard shares one source of truth. The app seeds intent (PRD + brief); Genie Code drives the interactive build. <strong>Genie Code (in-workspace):</strong> pre-authenticated and serverless — it profiles data, drafts YAML, creates the space, and runs benchmarks directly against your workspace.',
+       inputOutput:{inputs:['source schema or uploaded files','design_prd.md'],outputs:['governed Genie agent','dashboard','Lakebase app']}},
+      {expand:['tge-s1'],activate:['tge-n-s1'],narration:'<span class="hl">Act 1: Semantic Layer</span> — locate data, profile the schema, gate the measures, then author a governed Metric View with synonyms.',tier:[2,'Act 1: Semantic Layer'],
+       skillIds:['gaccel-sem'],
+       designRationale:'This act produces the <em>contract</em> the whole track builds on: a Unity Catalog Metric View that encodes MEASURE() semantics once. Everything is grounded in the profiled data and a signed-off measure inventory, so the numbers are governed from the first step.',
+       inputOutput:{inputs:['source schema','design_prd.md'],outputs:['genie_brief.md','governed Metric View + synonyms']}},
+      {activate:['tge-n-s1-w1','tge-n-s1-w2'],narration:'Point Genie Code at your data (existing, uploaded, or <span class="hl-y">synthetic</span>) and <span class="hl-y">profile</span> the schema read-only into an ERD and candidate measures.',tier:[3,'Tier 3: Workers'],
+       skillIds:['gaccel-locate','gaccel-profile'],
+       designRationale:'Grounding in real data up front means every later step reasons from truth. Profiling before modeling surfaces grains, keys, and join paths — so the Metric View reflects the <em>real shape</em> of the data, not an assumption.',
+       inputOutput:{inputs:['source schema or files'],outputs:['seeded brief','ERD','candidate measures']}},
+      {activate:['tge-n-s1-w3'],narration:'The <span class="hl">measures gate</span> — Genie Code drafts a five-measure inventory and <span class="hl-y">self-discovers</span> definitional conflicts (gross-vs-net, grain traps). You sign off before any YAML.',tier:[3,'Tier 3: The Gate'],
+       skillIds:['gaccel-measures'],
+       designRationale:'This gate is what the track hinges on: it prevents <em>two numbers, same name</em> from reaching production. The prompt names no conflict — Genie Code discovers it from the real definitions and recommends one reading, and nothing is authored until you approve.',
+       inputOutput:{inputs:['profile + brief'],outputs:['signed-off 5-measure inventory','discovered conflicts + recommendations']}},
+      {activate:['tge-n-s1-w4','tge-n-s1-w5'],narration:'Author the <span class="hl-y">Metric View</span> from the signed-off inventory (or import a BI model and promote to UC), then review and expand <span class="hl-y">v1.1 synonyms</span>.',tier:[3,'Tier 3: Workers'],
+       skillIds:['gaccel-mv','gaccel-syn'],
+       designRationale:'A UC Metric View encodes the math once so Genie and dashboards never re-derive it. Synonyms are how Genie maps a user\'s words — acronyms, informal names, legacy terms — onto the governed fields.',
+       inputOutput:{inputs:['signed-off inventory'],outputs:['governed Metric View','expanded synonyms']}},
+      {expand:['tge-s2'],activate:['tge-n-s2'],narration:'<span class="hl">Act 2: Genie Agent</span> — create a space on the Metric View, add instructions and verified queries, load benchmarks, and run the optimize loop.',tier:[2,'Act 2: Genie Agent'],
+       skillIds:['gaccel-agent'],
+       designRationale:'The agent is only as trustworthy as its guardrails and benchmarks. Verified queries plus expected-SQL benchmarks turn <em>looks right</em> into <em>measured right</em> — and the space is bound to the governed Metric View, never the raw tables.',
+       inputOutput:{inputs:['Metric View'],outputs:['Genie space','instructions','verified queries','benchmarks']}},
+      {activate:['tge-n-s2-w1','tge-n-s2-w2','tge-n-s2-w3'],narration:'<span class="hl-y">Describe</span> the space (MV as the only source), add lean rule-shaped <span class="hl-y">instructions</span>, and pin <span class="hl-y">verified queries</span> via MEASURE().',tier:[3,'Tier 3: Workers'],
+       skillIds:['gaccel-describe','gaccel-instr','gaccel-verified'],
+       designRationale:'Binding the space to the governed Metric View guarantees every answer uses the signed-off definitions. Short, load-bearing rules beat prose, and verified queries anchor the most-asked questions to exact governed SQL — the strongest signal in the trust stack.',
+       inputOutput:{inputs:['Metric View','brief guardrails'],outputs:['bound space','instruction block','verified question→SQL pairs']}},
+      {activate:['tge-n-s2-w4','tge-n-s2-w5'],narration:'Load ~15 <span class="hl-y">benchmarks</span> with expected SQL, then run the <span class="hl">optimize loop</span>: diff actual vs expected, map misses to the 5-mode fix table, apply append-only fixes, re-run.',tier:[3,'Tier 3: The Loop'],
+       skillIds:['gaccel-bench','gaccel-optimize'],
+       designRationale:'This is the Genie-Code-native equivalent of auto-optimization: expected SQL turns evaluation into a measurable pass rate, and you curate to the target by <em>adding</em> synonyms, instructions, or verified queries — never rewriting the space.',
+       inputOutput:{inputs:['Metric View','space'],outputs:['benchmark suite','fixes applied','pass rate ≥ target']}},
+      {expand:['tge-s3'],activate:['tge-n-s3'],narration:'<span class="hl">Act 3: Genie Ontology</span> — model the Discover domain and subdomains, author Pages, and write the routing page. UI-preferred, Beta.',tier:[2,'Act 3: Genie Ontology'],
+       skillIds:['gaccel-ont'],
+       designRationale:'Ontology is what lets one Genie front door route across many spaces. Domains and Pages live best in the Discover UI (no public API), with Genie Code drafting the content and you placing it — the routing page is the deck\'s highest-return exercise.',
+       inputOutput:{inputs:['Genie space','brief'],outputs:['domain + subdomains','Pages','routing page']}},
+      {activate:['tge-n-s3-w1','tge-n-s3-w3'],narration:'Model the <span class="hl-y">domain + subdomains</span> in the UI (reuse the pre-created one if provided), then write the <span class="hl-y">routing page</span> that sends each question to the right space.',tier:[3,'Tier 3: Workers'],
+       skillIds:['gaccel-domain','gaccel-routing'],
+       designRationale:'Domains are the taxonomy Genie One routes over; good routing is what makes a multi-space Genie <em>feel like one assistant</em>. Genie Code drafts the taxonomy and routing content; you confirm it in the Discover UI.',
+       inputOutput:{inputs:['spaces','taxonomy'],outputs:['Discover domain','routing page']}},
+      {expand:['tge-s4'],activate:['tge-n-s4'],narration:'<span class="hl">Act 4: Activate</span> — prove the agent, build an AI/BI dashboard on the Metric View, sync Gold tables to Lakebase, and optionally package as a bundle.',tier:[2,'Act 4: Activate'],
+       skillIds:['gaccel-activate'],
+       designRationale:'Activation turns a governed agent into a shipped product. The same Metric View powers both Genie and the dashboard so the numbers match everywhere, and synced base tables give the app real rows to serve.',
+       inputOutput:{inputs:['Genie agent','Metric View','Gold tables'],outputs:['proof','dashboard','Lakebase app','optional DAB']}},
+      {activate:['tge-n-s4-w2','tge-n-s4-w3'],narration:'Build a <span class="hl-y">dashboard</span> on the Metric View (via Genie Code\'s dashboard skill), then <span class="hl-y">sync Gold dimensions + facts</span> into Lakebase to power an AppKit app.',tier:[3,'Tier 3: Workers'],
+       skillIds:['gaccel-dash','gaccel-sync'],
+       designRationale:'Syncing the base tables — not just the Metric View — is what gives the app real rows to serve, making the governed semantics tangible to end users. One Metric View behind the dashboard keeps every surface consistent.',
+       inputOutput:{inputs:['Metric View','Gold tables'],outputs:['AI/BI dashboard','synced tables in Lakebase','app']}},
+      {narration:'<strong>Genie Accelerator complete!</strong> A governed semantic layer, a benchmarked Genie agent, a routed ontology, and a live dashboard + Lakebase app — all sharing one source of truth.',tier:[1,'Complete'],
+       summary:true},
+    ]
   }
 };
 
@@ -1216,6 +1359,17 @@ function buildAgentsTree(){
 <li id="tg-s4" class="collapsed"><div class="tnode type-orchestrator" id="tg-n-s4" data-skill="ag-evaldeploy" data-toggle="tg-s4"><div class="icon">4</div><div class="name">Stage 4: Integrate</div><div class="tag">stage</div><div class="meta">2 workers</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tg-n-s4-w1" data-skill="ag-proxy"><div class="icon">W</div><div class="name">AppKit agent proxy chat</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tg-n-s4-w2" data-skill="ag-feedback"><div class="icon">W</div><div class="name">chat feedback → MLflow</div><div class="tag">worker</div></div></li></ul></li>
 <li id="tg-s5" class="collapsed"><div class="tnode type-orchestrator" id="tg-n-s5" data-skill="ag-prompts" data-toggle="tg-s5"><div class="icon">5</div><div class="name">Stage 5: Evaluate & Govern</div><div class="tag">stage</div><div class="meta">5 workers</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tg-n-s5-w1" data-skill="ag-datasets"><div class="icon">W</div><div class="name">evaluation datasets</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tg-n-s5-w2" data-skill="ag-scorers"><div class="icon">W</div><div class="name">scorers & judges</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tg-n-s5-w3" data-skill="ag-evalruns"><div class="icon">W</div><div class="name">evaluation runs & iteration</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tg-n-s5-w4" data-skill="ag-signoff"><div class="icon">W</div><div class="name">human review & sign-off</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tg-n-s5-w5" data-skill="ag-register"><div class="icon">W</div><div class="name">logged model + UC registration</div><div class="tag">worker</div></div></li></ul></li>
 <li id="tg-s6" class="collapsed"><div class="tnode type-orchestrator" id="tg-n-s6" data-skill="ag-gateway" data-toggle="tg-s6"><div class="icon">6</div><div class="name">Stage 6: Ship & Operate</div><div class="tag">stage</div><div class="meta">1 worker</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tg-n-s6-w1" data-skill="ag-monitor"><div class="icon">W</div><div class="name">production monitoring</div><div class="tag">worker</div></div></li></ul></li>
+</ul></li></ul>`;
+}
+
+function buildGenieAccelTree(){
+  return `<ul>
+<li id="tge-root" class="collapsed"><div class="tnode type-entry" id="tge-n-root" data-skill="" data-toggle="tge-root"><div class="icon" style="background:var(--cyan-dim);color:var(--cyan)">G</div><div class="name">Data to Genie Agent</div><div class="tag" style="background:var(--cyan-dim);color:var(--cyan)">track</div><div class="chevron">▶</div></div>
+<ul>
+<li id="tge-s1" class="collapsed"><div class="tnode type-orchestrator" id="tge-n-s1" data-skill="gaccel-sem" data-toggle="tge-s1"><div class="icon">1</div><div class="name">Act 1: Semantic Layer</div><div class="tag">act</div><div class="meta">5 steps</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tge-n-s1-w1" data-skill="gaccel-locate"><div class="icon">W</div><div class="name">locate data & bring context</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s1-w2" data-skill="gaccel-profile"><div class="icon">W</div><div class="name">profile your schema</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s1-w3" data-skill="gaccel-measures"><div class="icon">W</div><div class="name">measures analysis (gate)</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s1-w4" data-skill="gaccel-mv"><div class="icon">W</div><div class="name">draft the Metric View</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s1-w5" data-skill="gaccel-syn"><div class="icon">W</div><div class="name">review & expand synonyms</div><div class="tag">worker</div></div></li></ul></li>
+<li id="tge-s2" class="collapsed"><div class="tnode type-orchestrator" id="tge-n-s2" data-skill="gaccel-agent" data-toggle="tge-s2"><div class="icon">2</div><div class="name">Act 2: Genie Agent</div><div class="tag">act</div><div class="meta">5 steps</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tge-n-s2-w1" data-skill="gaccel-describe"><div class="icon">W</div><div class="name">describe the agent</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s2-w2" data-skill="gaccel-instr"><div class="icon">W</div><div class="name">author instructions</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s2-w3" data-skill="gaccel-verified"><div class="icon">W</div><div class="name">add verified queries</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s2-w4" data-skill="gaccel-bench"><div class="icon">W</div><div class="name">load benchmarks</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s2-w5" data-skill="gaccel-optimize"><div class="icon">W</div><div class="name">optimize loop</div><div class="tag">worker</div></div></li></ul></li>
+<li id="tge-s3" class="collapsed"><div class="tnode type-orchestrator" id="tge-n-s3" data-skill="gaccel-ont" data-toggle="tge-s3"><div class="icon">3</div><div class="name">Act 3: Genie Ontology</div><div class="tag">act</div><div class="meta">3 steps</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tge-n-s3-w1" data-skill="gaccel-domain"><div class="icon">W</div><div class="name">model domain + subdomains</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s3-w2" data-skill="gaccel-pages"><div class="icon">W</div><div class="name">author Pages</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s3-w3" data-skill="gaccel-routing"><div class="icon">W</div><div class="name">write the routing page</div><div class="tag">worker</div></div></li></ul></li>
+<li id="tge-s4" class="collapsed"><div class="tnode type-orchestrator" id="tge-n-s4" data-skill="gaccel-activate" data-toggle="tge-s4"><div class="icon">4</div><div class="name">Act 4: Activate</div><div class="tag">act</div><div class="meta">4 steps</div><div class="chevron">▶</div></div><ul><li><div class="tnode type-worker" id="tge-n-s4-w1" data-skill="gaccel-share"><div class="icon">W</div><div class="name">show your agent</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s4-w2" data-skill="gaccel-dash"><div class="icon">W</div><div class="name">dashboard on the Metric View</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s4-w3" data-skill="gaccel-sync"><div class="icon">W</div><div class="name">synced tables → Lakebase → app</div><div class="tag">worker</div></div></li><li><div class="tnode type-worker" id="tge-n-s4-w4" data-skill="gaccel-dab"><div class="icon">W</div><div class="name">productionize as a bundle</div><div class="tag">worker</div></div></li></ul></li>
 </ul></li></ul>`;
 }
 
@@ -1767,6 +1921,18 @@ function initGalaxy() {
 
   const af = document.getElementById('agentFlow');
   if (af) af.innerHTML = AGENT_STAGES.map((st, i) => {
+    const orch = SKILL_MAP[st.orch];
+    const wc = orch ? (orch.workers||[]).length : 0;
+    const dots = Array(wc).fill(0).map((_,j) => {
+      const wid = orch && orch.workers[j] ? orch.workers[j] : '';
+      return `<div class="worker-dot" title="${SKILL_MAP[wid]?.name||''}" onclick="event.stopPropagation();openDetail('${wid}')"></div>`;
+    }).join('');
+    return (i > 0 ? '<div class="stage-arrow">›</div>' : '') +
+      `<div class="stage-cluster"><div class="stage-node ${st.sc}" onclick="openDetail('${st.orch}')" title="${stripHtml(SKILL_MAP[st.orch]?.desc||'')}"><div class="sn-num">${st.num}</div><div class="sn-label">${st.label}</div></div><div class="worker-dots">${dots}</div></div>`;
+  }).join('');
+
+  const gf = document.getElementById('genieAccelFlow');
+  if (gf) gf.innerHTML = GENIE_STAGES.map((st, i) => {
     const orch = SKILL_MAP[st.orch];
     const wc = orch ? (orch.workers||[]).length : 0;
     const dots = Array(wc).fill(0).map((_,j) => {
