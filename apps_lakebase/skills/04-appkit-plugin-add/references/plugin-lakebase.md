@@ -134,6 +134,18 @@ databricks postgres list-databases projects/$APP_NAME/branches/production \
 
 > **Provisioned is being retired.** Databricks is migrating Lakebase Provisioned to Autoscaling through 2026 (no customer action required), so new projects are Autoscaling-only. Treat the legacy `database` resource key / `w.database` SDK / `databricks database` CLI as historical — use the Autoscaling `postgres` model everywhere.
 
+> **SNAPSHOT-path counterpart (Genie Code / `w.apps.deploy(mode=SNAPSHOT)`).** The `app.resources.postgres` block above is applied by `bundle deploy`. On the SDK SNAPSHOT app-deploy path a `databricks.yml` app-`resources` block is **inert** — SNAPSHOT copies source, it does not apply the Terraform spine. Bind the same resource over REST/SDK **before** the plugin-bearing deploy instead (an unbound app carrying `valueFrom: postgres` boots `CRASHED`):
+>
+> ```
+> PATCH /api/2.0/apps/{app_name}
+> {"resources":[{"name":"postgres","postgres":{
+>   "branch":"projects/{project_id}/branches/production",
+>   "database":"projects/{project_id}/branches/production/databases/{db_id}",
+>   "permission":"CAN_CONNECT_AND_CREATE"}}]}
+> ```
+>
+> or the SDK equivalent `w.apps.update(app_name, App(resources=[AppResource(name="postgres", postgres=AppResourcePostgres(branch=..., database=..., permission=AppResourcePostgresPostgresPermission.CAN_CONNECT_AND_CREATE))]))` — field names verified against databricks-sdk `service.apps` (`AppResourcePostgres` = `{branch, database, permission}`, wrapped as `AppResource{name, postgres}`; the only permission enum is `CAN_CONNECT_AND_CREATE`). Read `{db_id}` back from `databricks postgres list-databases … --output json` (`.name`) — never hand-construct it. For a **read-only** app over synced/pre-existing tables the DB-level resource permission still uses `CAN_CONNECT_AND_CREATE` (the only enum); scope the actual reads with SELECT-only schema grants.
+
 ### 4. Configure Environment Variables
 
 **For deployment** — add to `app.yaml`:

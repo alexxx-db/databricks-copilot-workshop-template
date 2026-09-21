@@ -72,7 +72,8 @@ Genie Code can act on Databricks three independent ways, in order of preference:
 1. **`runDatabricksCli`** — a pre-authenticated, API-routed CLI path with a per-command **allow-list** and
    safety guardrails. The primary path. [TESTED]
 2. **Python SDK** — `from databricks.sdk import WorkspaceClient` via `executeCode`; auto-authenticated;
-   full REST surface. This is the **most capable** path: it **bypasses the CLI allow-list** and is the
+   full REST surface. This is the **most capable** path for **read and deploy** operations: it **bypasses
+   the CLI allow-list** and is the
    reliable way to `w.apps.deploy(...)`, obtain a runtime bearer via `w.config.authenticate()` (note:
    `w.config.token` is `None` on serverless — see §7), and poll deployment/run state.
    **Caveat:** the SDK has **no bundle-deploy equivalent** — `bundle deploy` is a composite client-side
@@ -85,6 +86,14 @@ Genie Code can act on Databricks three independent ways, in order of preference:
 A fourth, **raw shell** (`executeCode` language `sh` calling the `databricks` binary), is **blocked by a
 trampoline** unless `ENABLE_DATABRICKS_CLI=true` — an escape hatch, not an intended path. [TESTED]
 **Discipline:** try path 1 → if blocked, path 2 → if still blocked, path 3.
+
+> **Second gate — the action-safety checker (distinct from the CLI allow-list).** `executeCode`
+> independently screens for **mutating** operations: an unauthorized create/update/delete issued via the
+> SDK or `w.api_client.do` (POST/PATCH/PUT/DELETE) can be **blocked even though it bypasses the CLI
+> allow-list** — the SDK is *not* a universal escape hatch for writes. **Read-only** calls (`GET`,
+> `.list()`, `DESCRIBE`) pass. Consequence for governed provisioning (e.g. Lakebase): the create path is
+> the **bundle** (`bundle deploy`), and the SDK/REST role is the read-only verify GET — not a
+> `POST /postgres/projects` or `PATCH …/endpoints/*` workaround. See P35.
 
 > Full per-command allow-list tiers and the deploy/CWD/FUSE detail live in
 > **[references/allow-list-and-commands.md](references/allow-list-and-commands.md)** — load on demand.
@@ -443,7 +452,7 @@ The field guide flagged several items `[CONTESTED]`/`[INCOMPLETE]`. The session-
 | Does the Knowledge Assistant API work on Genie Code's SDK 0.67.0? (agents track) | **RESOLVED — REST yes, SDK wrapper no.** `w.knowledge_assistants` absent in 0.67.0; call `/api/2.1/knowledge-assistants` via `w.api_client.do` (no upgrade). [TESTED P22] |
 | Is the full `mlflow.genai` eval stack on the Genie runtime? | **RESOLVED — yes.** mlflow 3.8.1 has scorers, `evaluate`, and `optimize_prompts` (GEPA). [TESTED P23] |
 
-## AppKit hardening ledger (P24–P37)
+## AppKit hardening ledger (P24–P39)
 
 Live Genie-Code probes from the AppKit hardening sessions (2026-06-03), distilling an ~11-deploy booking-app
 failure (P24–P32) plus a round-2 deploy of the hardened skills (P33) and the Lakebase fork probes (P34–P37d)
@@ -462,9 +471,11 @@ into preventable causes. These extend the P1–P23 ledger; the §4 AppKit facts 
 | P32 | CLI allow-list non-deterministic; agent fabricated page-state | `apps init` blocked once then allowed on the same page type; agent reported an "Apps page" it never navigated to. SDK deploy bypasses the guardrail → reliable. Don't-fabricate-state. |
 | P33 | Round-2 run of the hardened skills — residual static-but-uncaught classes | Import-specifier gate + lockfile rule + human render gate all held. New misses: deploy #1 FAILED on an unused import (`TS6133`/`noUnusedLocals`); a green deploy then crashed at runtime on `<SelectItem value="">` (Radix needs a non-empty value) — the 02-build skill's own gotcha had prescribed `value=""`. Also external Unsplash hotlinks went blank (browser egress) and `\u0027` artifacts appeared from Python-written source. → extend the regex gate (empty value, escaped quote, `\uXXXX` blocking + unused-import review), fix the harmful gotcha, mandate an `onError` data-URI image fallback. |
 | P34 | Dependencies edit `package.json` directly (no local install) | Adding a dependency by editing `package.json` works — the server-side install at deploy reconciles it; the lockfile must stay in place (P29). The Lakebase setup fork edits `package.json` rather than shelling a local install. |
-| P35 | `databricks.yml` resources are inert on the SDK SNAPSHOT path | A `postgres_projects` declared in `databricks.yml` never materializes via the SNAPSHOT deploy (it is the Terraform spine, not applied here) → provision Lakebase over REST (`POST /api/2.0/postgres/projects`) + `PATCH /api/2.0/apps/{name}` to bind, instead of declaring bundle resources. |
+| P35 | `databricks.yml` resources are inert **on the SDK SNAPSHOT app-deploy path only** | A `postgres_projects` declared in `databricks.yml` never materializes via the **`w.apps.deploy(…, mode=SNAPSHOT)`** deploy (SNAPSHOT *copies source*; it does not apply the Terraform spine) → for the AppKit **app** path, provision Lakebase over REST (`POST /api/2.0/postgres/projects`) + `PATCH /api/2.0/apps/{name}` to bind. **This does NOT generalize to `bundle deploy`:** a `databricks bundle deploy --target dev` (the DP-bundle Terraform path) DOES materialize `postgres_projects` — there, declare it as a bundle resource with `default_endpoint_settings` for the caps (see the `databricks-asset-bundles` SKILL "Lakebase Resources" pattern + common-errors Error 18), NOT over REST. **Pick by deploy mechanism: SNAPSHOT app → REST create; `bundle deploy` → bundle resource.** |
 | P36 | `databricks apps validate` is blocked / page-dependent | Not reliably runnable from the agent on Genie Code → substitute a local YAML structural check (parse `app.yaml` + `package.json`, assert `valueFrom: postgres` + `DB_SCHEMA` + the dependency). |
 | P37b/d | Canonical Lakebase wiring boots straight to RUNNING when bound | The supported wiring shape is the `onPluginsReady(appkit)` hook on `createApp` + `appkit.server.extend(...)` — NOT `server({ autoStart: false })` + a manual `AppKit.server.start()` (the listener double-`listen()`s → boot crash; the earlier "autoStart:false broken" read was self-inflicted by omitting/duplicating `start()`). The `lakebase` **plugin** imports from the framework entrypoint (`@databricks/appkit`), not from the driver package (`@databricks/lakebase`). Binding the `postgres` resource BEFORE the first plugin-bearing deploy → RUNNING with no CRASHED hop; an unbound app carrying `valueFrom: postgres` boots CRASHED. |
+| P38 | A built-in skill can be **domain-authoritative yet wrong for the governed path** | The Genie Code runtime `databricks-lakebase` skill is CLI/SDK-first (`databricks postgres …`, `w.postgres.*`) — fine for ad-hoc use, but it knows nothing about DAB `postgres_*` and its create path is blocked here. For the workshop's **bundle-only** governance the correct combo is: **create** via the `bundle deploy` `postgres_projects` resource (caps in `default_endpoint_settings`; never a second `postgres_endpoints.primary` → 400 "read_write endpoint already exists", see `databricks-asset-bundles` common-errors Error 18), and use `databricks-lakebase` only for the **read-only verify GET** + downstream connection/reverse-ETL patterns. Do not let a built-in skill's domain authority override the governed provisioning path. |
+| P39 | Activation app-track deploy binds/verifies over the **already-synced** project | The `activation_deploy_validate` fork binds the app's `postgres` resource to the synced project over REST/SDK **before** the SNAPSHOT deploy. Body verified against databricks-sdk `service.apps`: `AppResourcePostgres` = `{branch, database, permission}` (both `branch` and `database` are FULL resource paths), wrapped as `AppResource{name:"postgres", postgres:{…}}` via `w.apps.update(name, App(resources=[…]))` / `PATCH /api/2.0/apps/{name}`; the only permission enum is `CAN_CONNECT_AND_CREATE`. The `database` value is the resource FQN — its id is RFC 1123 (hyphenated; read `.name` from `postgres list-databases`), NOT the underscore PG dbname `databricks_postgres`. `valueFrom: postgres` resolves ONLY when bound (unbound → CRASHED, P37b/d); a `databricks.yml` app-`resources` block stays inert on SNAPSHOT (P35). The pre-deploy static gate now also parses `app.yaml`/`databricks.yml` (assert `LAKEBASE_ENDPOINT` present; block an inert `databricks.yml` app-`resources` block; block an underscore `databricks_postgres` in a resource `database:` FQN). Deployed-app verification: the browser OAuth session is authoritative; the programmatic 3-hop replay is **best-effort** and often fails from serverless. Read-only app over synced tables → schema grants are SELECT-only even though the DB-level resource enum is `CAN_CONNECT_AND_CREATE`. |
 
 ## Reference files
 

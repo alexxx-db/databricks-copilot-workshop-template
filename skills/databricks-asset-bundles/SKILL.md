@@ -476,6 +476,27 @@ resources:
       volume_type: "MANAGED"
 ```
 
+### Lakebase Resources (`postgres_projects`) — Autoscaling
+
+`postgres_projects` is a first-class, schema-validated DAB resource type (`bundle validate`/`summary` show it in the resolved graph). **Declaring the project auto-creates the default `production` branch and a `primary` `READ_WRITE` endpoint** — so DO NOT also declare a separate `postgres_endpoints.primary` (that 400s with `read_write endpoint already exists`; see [common-errors.md](references/common-errors.md) Error 18). Set the endpoint cost caps at creation via the project's `default_endpoint_settings`:
+
+```yaml
+resources:
+  postgres_projects:
+    activation:
+      project_id: ${var.user_app_name}      # one project per user; project_id == app name
+      display_name: ${var.user_app_name}
+      pg_version: 17
+      default_endpoint_settings:            # caps the auto-created primary endpoint
+        autoscaling_limit_min_cu: 0.5       # compute floor per active endpoint (scale-to-zero comes from suspend, below)
+        autoscaling_limit_max_cu: 2.0       # ceiling
+        suspend_timeout_duration: "1800s"   # idle -> suspend (30 min); suspended = $0 compute
+```
+
+Verified schema (CLI v1.15.0): `postgres_projects.<key>` requires `project_id`; also accepts `display_name`, `pg_version`, `default_endpoint_settings` (`autoscaling_limit_min_cu` / `autoscaling_limit_max_cu` / `suspend_timeout_duration` / `no_suspension`), `default_branch`, `custom_tags`. `postgres_endpoints.<key>` requires `endpoint_id`, `parent`, `endpoint_type`; adopt an auto-created endpoint with `replace_existing: true` rather than duplicating it. Verify caps read-only after deploy: `w.api_client.do("GET", "/api/2.0/postgres/projects/<id>/branches/production/endpoints/primary")` — never `update-endpoint` (PATCH) on a governed path. `CONTINUOUS`-style always-on endpoints are a cost trap; keep the suspend window.
+
+> **Genie Code note:** the DP `bundle deploy` (Terraform) path DOES materialize `postgres_projects`. The "postgres_projects is inert, provision over REST" guidance in `genie-code-environment` P35 applies only to the AppKit **app SNAPSHOT** deploy, not to `bundle deploy`.
+
 ### App Monitoring
 
 View application logs: `databricks apps logs <app-name> --profile <profile-name>`
@@ -595,7 +616,7 @@ See [Error 15](references/common-errors.md) in Common Errors for recovery steps.
 
 - **[Configuration Guide](references/configuration-guide.md)**: Complete YAML configuration patterns, environment setup, variables (with warehouse_id lookup), targets, DLT pipelines (with glob libraries), dashboards (dataset_catalog/dataset_schema), SQL Alerts v2, volumes (grants not permissions), Apps, schedules, notifications, permissions, library dependencies
 - **[Job Patterns](references/job-patterns.md)**: Hierarchical job architecture (atomic/composite/orchestrator), task types, parameter passing (dbutils.widgets.get vs argparse), orchestrator patterns, SQL tasks, multi-task dependencies
-- **[Common Errors](references/common-errors.md)**: Anti-patterns, deployment error prevention (17 common errors including Terraform destroy on resource removal, Lakebase soft-delete, --force limitations, dashboard hardcoded catalog, alert v2 schema mismatch, volume permissions, app env vars), troubleshooting guide, validation checklist, pre-deployment validation script
+- **[Common Errors](references/common-errors.md)**: Anti-patterns, deployment error prevention (18 common errors including Terraform destroy on resource removal, Lakebase soft-delete, --force limitations, Lakebase primary-endpoint auto-creation conflict, dashboard hardcoded catalog, alert v2 schema mismatch, volume permissions, app env vars), troubleshooting guide, validation checklist, pre-deployment validation script
 - **[Notebook Source Format](references/notebook-source-format.md)**: Databricks notebook source format (`# Databricks notebook source`, `# COMMAND ----------` cell separators, `# MAGIC %md`). Read when creating or debugging notebooks executed via `notebook_task`
 
 ## Scripts

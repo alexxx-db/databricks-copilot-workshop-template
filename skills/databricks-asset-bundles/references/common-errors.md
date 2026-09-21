@@ -840,7 +840,9 @@ databricks bundle deploy -t dev --auto-approve
 resources:
   postgres_projects:
     my_db:
-      name: "my-lakebase-db"
+      project_id: my-lakebase-db
+      display_name: "my-lakebase-db"
+      pg_version: 17
 
 # Phase 2: Developer removes block thinking "it already exists"
 # resources:
@@ -854,7 +856,13 @@ resources:
 resources:
   postgres_projects:
     my_db:
-      name: "my-lakebase-db"
+      project_id: my-lakebase-db
+      display_name: "my-lakebase-db"
+      pg_version: 17
+      default_endpoint_settings:       # caps the auto-created primary endpoint
+        autoscaling_limit_min_cu: 0.5
+        autoscaling_limit_max_cu: 2.0
+        suspend_timeout_duration: "1800s"
 
   apps:
     my_app:
@@ -922,3 +930,63 @@ databricks bundle deploy -t dev
 ```
 
 **Rule:** `--force` = "overwrite remote Terraform state with local state." It does NOT delete-and-recreate resources or resolve API-level name uniqueness errors. For name conflicts, delete the existing resource or change the name.
+
+---
+
+### Error 18: Lakebase `primary` Endpoint Auto-Created on Project Creation (CRITICAL)
+
+**Problem:** Creating a `postgres_projects` resource **auto-provisions** the default `production` branch and a `primary` `READ_WRITE` endpoint. If you ALSO declare a separate `postgres_endpoints.primary`, `bundle deploy` tries to create a second endpoint with the same ID and fails — Terraform cannot adopt the pre-existing one:
+
+```
+Error: cannot create postgres endpoint: read_write endpoint already exists
+```
+
+The trap that follows: the caps (`autoscaling_limit_*`, `suspend_timeout_duration`) are then only reachable via `update-endpoint` (PATCH) — which is exactly the mutating call a governed / Genie Code path blocks. The gate "caps set by `bundle deploy`" becomes unreachable.
+
+❌ **WRONG — separate endpoint resource duplicates the auto-created one:**
+```yaml
+resources:
+  postgres_projects:
+    activation:
+      project_id: my-project
+      display_name: my-project
+      pg_version: 17
+  postgres_endpoints:
+    primary:
+      endpoint_id: primary          # ← already created by the project → 400 "already exists"
+      endpoint_type: ENDPOINT_TYPE_READ_WRITE
+      parent: projects/my-project/branches/production
+      autoscaling_limit_min_cu: 0.5
+      autoscaling_limit_max_cu: 2.0
+      suspend_timeout_duration: "1800s"
+```
+
+✅ **CORRECT (recommended) — size the auto-created endpoint via `default_endpoint_settings`, no separate endpoint resource:**
+```yaml
+resources:
+  postgres_projects:
+    activation:
+      project_id: my-project
+      display_name: my-project
+      pg_version: 17
+      default_endpoint_settings:      # applied to the auto-created primary endpoint at create time
+        autoscaling_limit_min_cu: 0.5
+        autoscaling_limit_max_cu: 2.0
+        suspend_timeout_duration: "1800s"
+```
+
+✅ **CORRECT (fallback) — if you truly must declare the endpoint explicitly, adopt the auto-created one instead of duplicating it:**
+```yaml
+resources:
+  postgres_endpoints:
+    primary:
+      endpoint_id: primary
+      endpoint_type: ENDPOINT_TYPE_READ_WRITE
+      parent: projects/my-project/branches/production
+      replace_existing: true          # ← takes over the auto-created endpoint instead of creating a duplicate
+      autoscaling_limit_min_cu: 0.5
+      autoscaling_limit_max_cu: 2.0
+      suspend_timeout_duration: "1800s"
+```
+
+**Rule:** One project = one auto-created `primary` endpoint. Prefer `default_endpoint_settings` on the project to set caps at creation; only declare `postgres_endpoints` when you need endpoint-only fields, and then always with `replace_existing: true`. Never fix caps with `update-endpoint` (PATCH) on a governed path — set them declaratively and re-deploy.

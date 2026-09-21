@@ -340,6 +340,8 @@ databricks apps deploy --skip-build --profile $PROFILE
 
 For Lakebase Autoscaling, use `postgres_project`/`postgres_branch`/`postgres_endpoint` resources (CLI v0.287.0+) if you want bundle-managed project lifecycle. For Lakebase Provisioned, use `database_instance` + `app.resources[].database` (CLI v0.265.0+). Do not mix the two models.
 
+> **Client note — Genie Code (SDK SNAPSHOT path):** the `postgres_*` bundle resources and the `bundle deploy` resource-reconciliation above are the **IDE/CLI** path. On Genie Code the reliable deploy is `w.apps.deploy(<name>, AppDeployment(source_code_path=…, mode=SNAPSHOT))`, which **copies source and does NOT apply `databricks.yml` app-`resources`** (P35) — so bind the `postgres` resource over REST/SDK (`PATCH /api/2.0/apps/{name}` or `w.apps.update`) **before** the plugin-bearing deploy, never via `databricks.yml`. `valueFrom: postgres` resolves only once that resource is bound; an unbound app carrying it boots `CRASHED` (P37b/d). See `04-appkit-plugin-add/references/plugin-lakebase.md` "SNAPSHOT-path counterpart" for the exact body. Deployed-app verification on Genie Code: the browser OAuth session is the authoritative path — the programmatic 3-hop `requests.Session()` replay is best-effort and frequently fails from serverless compute.
+
 > **Provisioned is being retired.** Databricks is migrating Lakebase Provisioned to Autoscaling through 2026 with no customer action required. New work should use the Autoscaling `postgres_*` model; the Provisioned `database_instance` path above is retained only for pre-existing instances.
 
 Wait for completion — typically 1-3 minutes for redeployments, 3-5 minutes for first deploys. Do not treat longer waits as failures until 7+ minutes have elapsed.
