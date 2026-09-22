@@ -1,0 +1,48 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "width": "container",
+  "height": "container",
+  "config": {
+    "autosize": { "type": "fit", "contains": "padding" },
+    "view": { "stroke": "transparent" },
+    "axis": { "labelColor": "#5A6472", "titleColor": "#5A6472", "gridColor": "#EEF1F4" }
+  },
+  "data": { "name": "databricks_query" },
+  "encoding": {
+    "x": {
+      "field": "categoryName",
+      "type": "nominal",
+      "sort": { "op": "min", "field": "sortOrder", "order": "ascending" },
+      "axis": { "title": "Category", "labelAngle": -35 }
+    }
+  },
+  "layer": [
+    {
+      "mark": { "type": "bar", "width": { "band": 0.75 }, "color": "#FF3621" },
+      "encoding": {
+        "y": {
+          "field": "itemCount",
+          "type": "quantitative",
+          "axis": { "title": "Count", "format": "~s" },
+          "scale": { "nice": true }
+        }
+      }
+    },
+    {
+      "mark": { "type": "line", "point": { "filled": true, "size": 60 }, "color": "#1B5162" },
+      "encoding": {
+        "y": {
+          "field": "cumulativePct",
+          "type": "quantitative",
+          "scale": { "domain": [0, 1] },
+          "axis": { "title": "Cumulative %", "format": "%", "orient": "right" }
+        }
+      }
+    },
+    {
+      "mark": { "type": "rule", "strokeDash": [4, 4], "color": "#8A94A6" },
+      "encoding": { "y": { "datum": 0.8 } }
+    }
+  ],
+  "resolve": { "scale": { "y": "independent" } }
+}

@@ -8,7 +8,7 @@ deploy_note: "AI/BI (Lakeview) dashboards deploy via `bundle deploy --target dev
 coverage: full
 metadata:
   author: prashanth subrahmanyam
-  version: "4.1"
+  version: "4.2"
   domain: monitoring
   role: worker
   pipeline_stage: 7
@@ -342,12 +342,12 @@ WHERE column_name = ':table' AND drift_type = 'CONSECUTIVE'
 
 **These are non-negotiable for production dashboards:**
 
-- ✅ **6-Column Grid:** NOT 12-column! Widths must be 1-6
+- ✅ **12-Column Grid:** Widths are 1–12; each row should fill width=12 with no gaps. Add `"layoutVersion": "GRID_V1"` to every page.
 - ✅ **Version Specs:** KPIs use v2, Charts use v3, Tables use v2, Pivots use v3, Choropleth Map (`choropleth-map`) uses v1, Symbol Map (`symbol-map`) uses v2
 - ✅ **Global Filters:** Cross-dashboard filtering on a dedicated page
 - ✅ **DATE Parameters:** Static dates, not DATETIME with dynamic expressions
 - ✅ **Proper JOINs:** Include workspace_id AND entity ID
-- ❌ **No 12-Column Grid:** Widget widths are 1-6, never 1-12
+- ❌ **No gaps in a row:** Widget widths in a row must sum to 12, never leave a partial row
 - ❌ **No Assumed Field Names:** Verify system table schemas
 
 **Why This Matters:**
@@ -358,45 +358,50 @@ WHERE column_name = ':table' AND drift_type = 'CONSECUTIVE'
 
 ---
 
-### 1. Grid System (6-Column, NOT 12!)
+### 1. Grid System (12-Column)
 
-#### ⚠️ ALWAYS Use 6-Column Grid (NOT 12!)
+#### ⚠️ AI/BI uses a 12-Column Grid
 
-This is the #1 cause of widget snapping issues.
+AI/BI dashboards use a flexible **12-column grid** (`layoutVersion: "GRID_V1"`). You subdivide it into
+3, 4, or 6 visual columns depending on density — but the underlying width unit is always out of **12**.
+The #1 cause of widget snapping issues is rows that don't sum to 12 (gaps) or that assume a 6-unit grid.
 
 ```json
 {
   "position": {
-    "x": 0,     // Column position: 0-5 (6-column grid)
-    "y": 0,     // Row position: any positive integer
-    "width": 3, // Width: 1, 2, 3, 4, or 6 (must sum to ≤6 per row)
-    "height": 6 // Height: 1, 2, 6, 9 are common values
+    "x": 0,      // Column position: 0-11 (12-column grid)
+    "y": 0,      // Row position: any positive integer
+    "width": 6,  // Width: 1-12 (widths in a row must sum to 12, no gaps)
+    "height": 6  // Height: row units (KPIs 3-4, charts 5-6, tables 5-8)
   }
 }
 ```
 
+> **"6-column" is a subdivision choice, not the grid.** A dense technical dashboard divides the 12-grid
+> into six 2-wide columns; an executive dashboard uses three 4-wide columns. Either way `width` is out of 12.
+
 #### Grid Layout Patterns
 
 ```json
-// Two widgets side-by-side (each 3 columns)
-{"x": 0, "y": 0, "width": 3, "height": 6}  // Left
-{"x": 3, "y": 0, "width": 3, "height": 6}  // Right
+// Two widgets side-by-side (each 6 = half of 12)
+{"x": 0, "y": 0, "width": 6, "height": 6}  // Left
+{"x": 6, "y": 0, "width": 6, "height": 6}  // Right
 
-// Three widgets across (each 2 columns)
-{"x": 0, "y": 0, "width": 2, "height": 6}  // Left
-{"x": 2, "y": 0, "width": 2, "height": 6}  // Center
-{"x": 4, "y": 0, "width": 2, "height": 6}  // Right
+// Three widgets across (each 4 = a third)
+{"x": 0, "y": 0, "width": 4, "height": 6}  // Left
+{"x": 4, "y": 0, "width": 4, "height": 6}  // Center
+{"x": 8, "y": 0, "width": 4, "height": 6}  // Right
 
-// KPI row (6 counters, 1 column each)
-{"x": 0, "y": 0, "width": 1, "height": 2}
-{"x": 1, "y": 0, "width": 1, "height": 2}
-{"x": 2, "y": 0, "width": 1, "height": 2}
-{"x": 3, "y": 0, "width": 1, "height": 2}
-{"x": 4, "y": 0, "width": 1, "height": 2}
-{"x": 5, "y": 0, "width": 1, "height": 2}
+// KPI row (6 counters, width 2 each = 12)
+{"x": 0,  "y": 0, "width": 2, "height": 3}
+{"x": 2,  "y": 0, "width": 2, "height": 3}
+{"x": 4,  "y": 0, "width": 2, "height": 3}
+{"x": 6,  "y": 0, "width": 2, "height": 3}
+{"x": 8,  "y": 0, "width": 2, "height": 3}
+{"x": 10, "y": 0, "width": 2, "height": 3}
 
-// Full-width chart
-{"x": 0, "y": 0, "width": 6, "height": 6}
+// Full-width chart / table
+{"x": 0, "y": 0, "width": 12, "height": 6}
 ```
 
 #### Common Height Values
@@ -614,7 +619,7 @@ ORDER BY window.start
       }
     }
   },
-  "position": {"x": 0, "y": 2, "width": 2, "height": 2}
+  "position": {"x": 0, "y": 2, "width": 4, "height": 3}
 }
 ```
 
@@ -666,7 +671,7 @@ ORDER BY window.start
       }
     }
   },
-  "position": {"x": 3, "y": 4, "width": 3, "height": 6}
+  "position": {"x": 6, "y": 4, "width": 6, "height": 6}
 }
 ```
 
@@ -714,7 +719,7 @@ ORDER BY window.start
       }
     }
   },
-  "position": {"x": 0, "y": 4, "width": 3, "height": 6}
+  "position": {"x": 0, "y": 4, "width": 6, "height": 6}
 }
 ```
 
@@ -762,7 +767,7 @@ ORDER BY window.start
       }
     }
   },
-  "position": {"x": 0, "y": 10, "width": 3, "height": 6}
+  "position": {"x": 0, "y": 10, "width": 6, "height": 6}
 }
 ```
 
@@ -812,7 +817,7 @@ ORDER BY window.start
       }
     }
   },
-  "position": {"x": 0, "y": 16, "width": 6, "height": 6}
+  "position": {"x": 0, "y": 16, "width": 12, "height": 6}
 }
 ```
 
@@ -869,7 +874,7 @@ Pivot tables display hierarchical data with expand/collapse drill-down (released
       }
     }
   },
-  "position": {"x": 0, "y": 0, "width": 6, "height": 8}
+  "position": {"x": 0, "y": 0, "width": 12, "height": 8}
 }
 ```
 
@@ -939,7 +944,7 @@ Use when you need `cubeGroupingSets` for expand/collapse. Define custom calculat
       "frame": {"showTitle": true, "title": "Hierarchy with Ratio Metrics"}
     }
   },
-  "position": {"x": 0, "y": 0, "width": 6, "height": 8}
+  "position": {"x": 0, "y": 0, "width": 12, "height": 8}
 }
 ```
 
@@ -980,7 +985,7 @@ Use when you don't need `cubeGroupingSets`. Define aggregate expressions directl
       "frame": {"showTitle": true, "title": "Flat Grouping with Ratios"}
     }
   },
-  "position": {"x": 0, "y": 0, "width": 6, "height": 8}
+  "position": {"x": 0, "y": 0, "width": 12, "height": 8}
 }
 ```
 
@@ -1053,7 +1058,7 @@ Requires **numeric** latitude/longitude columns (DOUBLE, not STRING). If upstrea
       }
     }
   },
-  "position": {"x": 0, "y": 0, "width": 3, "height": 8}
+  "position": {"x": 0, "y": 0, "width": 6, "height": 8}
 }
 ```
 
@@ -1113,7 +1118,7 @@ Geographic role values:
       }
     }
   },
-  "position": {"x": 3, "y": 0, "width": 3, "height": 8}
+  "position": {"x": 6, "y": 0, "width": 6, "height": 8}
 }
 ```
 
@@ -1195,7 +1200,7 @@ END AS state_full_name
       }
     }
   },
-  "position": {"x": 0, "y": 0, "width": 2, "height": 2}
+  "position": {"x": 0, "y": 0, "width": 3, "height": 2}
 }
 ```
 
@@ -1398,21 +1403,21 @@ In dashboard calculated columns (`columns[]`), prefer `COUNT(DISTINCT location_i
 ```
 Page 1: Overview
 ├── Row 0: Filters (height: 2)
-│   ├── Date Range Filter (width: 2)
-│   ├── Store Filter (width: 2)
-│   └── Product Filter (width: 2)
+│   ├── Date Range Filter (width: 4)
+│   ├── Store Filter (width: 4)
+│   └── Product Filter (width: 4)
 │
-├── Row 2: KPIs (height: 2)
-│   ├── Total Revenue (width: 2)
-│   ├── Total Units (width: 2)
-│   └── Transaction Count (width: 2)
+├── Row 2: KPIs (height: 3)
+│   ├── Total Revenue (width: 4)
+│   ├── Total Units (width: 4)
+│   └── Transaction Count (width: 4)
 │
-├── Row 4: Main Charts (height: 6)
-│   ├── Revenue Trend (line, width: 3)
-│   └── Revenue by Category (bar, width: 3)
+├── Row 5: Main Charts (height: 6)
+│   ├── Revenue Trend (line, width: 6)
+│   └── Revenue by Category (bar, width: 6)
 │
-└── Row 10: Detail Table (height: 6)
-    └── Transaction Details (width: 6)
+└── Row 11: Detail Table (height: 6)
+    └── Transaction Details (width: 12)
 
 Page: Global Filters
 └── Cross-dashboard filters
@@ -1459,6 +1464,8 @@ Page: Global Filters
     {
       "name": "page_overview",
       "displayName": "Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
       "layout": [
       ]
     },
@@ -1466,6 +1473,7 @@ Page: Global Filters
       "name": "page_global_filters",
       "displayName": "Global Filters",
       "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1",
       "layout": [
       ]
     }
@@ -1528,6 +1536,7 @@ Always include a Global Filters page for cross-dashboard filtering:
   "name": "page_global_filters",
   "displayName": "Global Filters",
   "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+  "layoutVersion": "GRID_V1",
   "layout": [
     {
       "widget": {
@@ -1541,7 +1550,7 @@ Always include a Global Filters page for cross-dashboard filtering:
           }
         }
       },
-      "position": {"x": 0, "y": 0, "width": 2, "height": 2}
+      "position": {"x": 0, "y": 0, "width": 3, "height": 2}
     },
     {
       "widget": {
@@ -1555,7 +1564,7 @@ Always include a Global Filters page for cross-dashboard filtering:
           }
         }
       },
-      "position": {"x": 2, "y": 0, "width": 2, "height": 2}
+      "position": {"x": 3, "y": 0, "width": 3, "height": 2}
     }
   ]
 }
@@ -1828,7 +1837,7 @@ The canonical implementation of both guards lives in `scripts/deploy_dashboard.p
 - [ ] Create charts (version 3)
 - [ ] Create tables (version 2)
 - [ ] Create filter widgets (version 2)
-- [ ] Position using 6-column grid
+- [ ] Position using 12-column grid (rows sum to 12, `layoutVersion: "GRID_V1"` on every page)
 
 #### Phase 4: Parameters (15 min)
 
@@ -1846,7 +1855,7 @@ The canonical implementation of both guards lives in `scripts/deploy_dashboard.p
 
 - [ ] Import dashboard JSON
 - [ ] Test all filters
-- [ ] Verify widget snapping (6-column grid)
+- [ ] Verify widget snapping (12-column grid, rows sum to 12)
 - [ ] Check data accuracy
 
 ---
@@ -1885,7 +1894,7 @@ The canonical implementation of both guards lives in `scripts/deploy_dashboard.p
 
 #### Before Deploying Dashboard
 
-- [ ] All widget positions use 6-column grid (widths: 1-6)
+- [ ] All widget positions use 12-column grid (widths: 1-12; each row sums to 12)
 - [ ] KPIs use version 2 (not version 3)
 - [ ] Charts use version 3 (bar, line, pie, area, scatter, point, choropleth, pivot)
 - [ ] Tables use version 2
@@ -1981,7 +1990,7 @@ Location: `assets/templates/dashboard-template.json`
 - ✅ **Proper JOIN Patterns** - Demonstrates correct workspace_id + entity_id JOIN requirements
 - ✅ **SCD2 Handling** - Shows QUALIFY pattern for latest records from SCD2 tables
 - ✅ **Widget Configuration** - All widget types properly configured (counters, bar charts, line charts, tables)
-- ✅ **6-Column Grid Layout** - Correct positioning with 6-column grid system
+- ✅ **12-Column Grid Layout** - Correct positioning with the 12-column grid system (rows sum to 12)
 - ✅ **Parameter Configuration** - Time range parameters with proper DATE type
 - ✅ **Variable Substitution** - Uses ${catalog} and ${schema} patterns
 - ✅ **Multi-Page Dashboard** - Overview + Global Filters pages
@@ -2010,11 +2019,15 @@ Location: `references/Jobs System Tables Dashboard.lvdash.json`
 
 ### Common Mistakes to Avoid
 
-#### ❌ Mistake 1: 12-Column Grid
+#### ❌ Mistake 1: Rows that don't sum to 12 (gaps)
 
 ```json
-// Wrong - widget won't position correctly
-{"width": 6}  // This is FULL width, not half!
+// Wrong - leaves a gap, widget won't snap correctly
+{"x": 0, "width": 4}  // ...and the row stops here, columns 4-11 left empty
+
+// Right - the row fills all 12 columns
+{"x": 0, "width": 6}   // half
+{"x": 6, "width": 6}   // half → 6 + 6 = 12
 ```
 
 #### ❌ Mistake 2: Wrong Widget Version
@@ -2276,14 +2289,15 @@ Examples:
 
 ## Key Principles Summary
 
-### 1. 6-Column Grid (NOT 12!)
+### 1. 12-Column Grid
 
 ```json
-// ✅ Correct
-{"width": 3}  // Half width
+// ✅ Correct — widths in a row sum to 12
+{"width": 6}   // Half width
+{"width": 12}  // Full width
 
-// ❌ Wrong
-{"width": 6}  // This is full width in 6-column grid!
+// ❌ Wrong — leaves a gap (row must total 12)
+{"width": 3}  // A quarter — pair with widths that complete the row to 12
 ```
 
 ### 2. Version Numbers
@@ -2377,7 +2391,7 @@ Detailed patterns and examples are organized in reference files:
 
 ### Critical Rules
 
-- 6-column grid (NOT 12!)
+- 12-column grid (`layoutVersion: "GRID_V1"`; rows sum to 12, no gaps)
 - KPIs: v2, Charts/Pivots: v3, Tables: v2, Sankey: v1, Choropleth: v1, Symbol Map: v2, Waterfall: v3, Histogram: v3
 - DATE type for parameters (not DATETIME)
 - Include Global Filters page

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "width": "container",
+  "height": "container",
+  "config": {
+    "autosize": { "type": "fit", "contains": "padding" },
+    "view": { "stroke": "transparent" },
+    "axis": { "labelColor": "#5A6472", "titleColor": "#5A6472", "gridColor": "#EEF1F4" }
+  },
+  "data": { "name": "databricks_query" },
+  "mark": { "type": "rect", "tooltip": true },
+  "encoding": {
+    "x": { "field": "colKey", "type": "ordinal", "axis": { "title": "Column" } },
+    "y": {
+      "field": "rowKey",
+      "type": "nominal",
+      "sort": { "op": "sum", "field": "metricValue", "order": "descending" },
+      "axis": { "title": null }
+    },
+    "color": {
+      "field": "metricValue",
+      "type": "quantitative",
+      "scale": { "range": ["#FDE7E2", "#FF3621"] },
+      "legend": { "title": "Value" }
+    }
+  }
+}

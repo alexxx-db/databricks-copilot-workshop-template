@@ -1,0 +1,35 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "data": { "name": "databricks_query" },
+  "width": "container",
+  "height": "container",
+  "config": { "autosize": { "type": "fit", "contains": "padding" } },
+  "params": [
+    {
+      "name": "databricks_mark_selection",
+      "select": { "type": "point", "fields": ["categoryName"] }
+    }
+  ],
+  "mark": { "type": "bar", "stroke": null },
+  "encoding": {
+    "x": { "field": "categoryName", "type": "nominal", "title": "Category" },
+    "y": { "field": "salesValue", "type": "quantitative", "title": "Sales" },
+    "color": { "field": "categoryName", "type": "nominal", "legend": null },
+    "fillOpacity": {
+      "condition": { "param": "databricks_mark_selection", "value": 1 },
+      "value": 0.3
+    },
+    "stroke": {
+      "condition": {
+        "param": "databricks_mark_selection",
+        "empty": false,
+        "value": { "expr": "colors.markHighlightColor" }
+      },
+      "value": null
+    },
+    "strokeWidth": {
+      "condition": { "param": "databricks_mark_selection", "empty": false, "value": 2 },
+      "value": 0
+    }
+  }
+}

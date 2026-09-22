@@ -1,0 +1,46 @@
+{
+  "datasets": [
+    {
+      "name": "rows",
+      "displayName": "Account Rows",
+      "queryLines": [
+        "SELECT account_name AS name, SUM(net_revenue) AS amount,\n",
+        "  CASE WHEN SUM(net_revenue) >= 1000000 THEN 'Green'\n",
+        "       WHEN SUM(net_revenue) >= 250000 THEN 'Yellow' ELSE 'Red' END AS status\n",
+        "FROM ${catalog}.${schema}.fact_sales\n",
+        "GROUP BY account_name ORDER BY amount DESC LIMIT 20"
+      ],
+      "catalog": "${catalog}",
+      "schema": "${schema}"
+    }
+  ],
+  "pages": [
+    {
+      "name": "page_composite",
+      "displayName": "Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "cp_composite",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<!-- @custom-page -->\n",
+                "{\"code\": \"var R=require('react');function toneFg(k,d){if(k==='green')return d?'#4ade80':'#137333';if(k==='yellow')return d?'#fbbf24':'#8a5a00';if(k==='red')return d?'#f87171':'#c5221f';return d?'#9aa0a6':'#6b7280';}function toneBg(k,d){if(d)return k==='green'?'rgba(74,222,128,0.16)':k==='yellow'?'rgba(251,191,36,0.16)':k==='red'?'rgba(248,113,113,0.18)':'rgba(255,255,255,0.08)';return k==='green'?'#e6f4ea':k==='yellow'?'#fdecc8':k==='red'?'#fde2e1':'#eef0f2';}function money(v){if(v==null||isNaN(Number(v)))return '\\\\u2014';var n=Number(v);if(Math.abs(n)>=1e6)return '$'+(n/1e6).toFixed(2)+'M';if(Math.abs(n)>=1e3)return '$'+(n/1e3).toFixed(1)+'K';return '$'+Math.round(n);}function Skeleton(props){var d=props.theme==='dark';R.useEffect(function(){if(document.getElementById('cp-skeleton-kf'))return;var st=document.createElement('style');st.id='cp-skeleton-kf';st.textContent='@keyframes cpSkeleton{0%{background-position:-200% 0}100%{background-position:200% 0}}';document.head.appendChild(st);},[]);var b=d?'#2a2a2a':'#e9ecef';var h=d?'#3a3a3a':'#f5f7fa';return R.createElement('div',{style:{height:props.height||80,borderRadius:8,background:'linear-gradient(90deg,'+b+' 25%,'+h+' 50%,'+b+' 75%)',backgroundSize:'200% 100%',animation:'cpSkeleton 1.4s ease-in-out infinite'}});}function App(props){var isDark=props.theme==='dark';var res=viz.useCustomPageQuery({query:{datasetName:'rows',fields:[{fieldName:'name',expression:'`name`'},{fieldName:'amount',expression:'`amount`'},{fieldName:'status',expression:'`status`'}]}});var loading=!(res&&res.rows&&res.rows.length);var rows=loading?[]:res.rows;var total=rows.reduce(function(a,r){return a+(Number(r.amount)||0);},0);var green=rows.filter(function(r){return String(r.status).toLowerCase().indexOf('green')>=0;}).length;var wrap={padding:24,fontFamily:'Inter, ui-sans-serif, system-ui, sans-serif',color:isDark?'#f5f5f5':'#1b1b1b'};if(loading)return R.createElement('div',{style:wrap},R.createElement('h1',{style:{fontSize:24,fontWeight:700,margin:'0 0 14px'}},'Overview'),R.createElement(Skeleton,{theme:props.theme,height:88}),R.createElement('div',{style:{height:12}}),R.createElement(Skeleton,{theme:props.theme,height:200}));var kpi=function(lbl,val){return R.createElement('div',{style:{flex:1,padding:16,borderRadius:10,border:'1px solid '+(isDark?'#333':'#e5e8ec'),background:isDark?'#1a1a1a':'#fff'}},R.createElement('div',{style:{fontSize:11,textTransform:'uppercase',letterSpacing:'0.04em',color:isDark?'#9aa0a6':'#6b7280'}},lbl),R.createElement('div',{style:{fontSize:26,fontWeight:700,marginTop:6}},val));};var pill=function(s){var k=String(s).toLowerCase();k=k.indexOf('green')>=0?'green':k.indexOf('yellow')>=0?'yellow':k.indexOf('red')>=0?'red':'grey';return R.createElement('span',{style:{padding:'2px 10px',borderRadius:12,fontSize:12,fontWeight:600,background:toneBg(k,isDark),color:toneFg(k,isDark)}},String(s));};var list=rows.map(function(r,i){return R.createElement('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',borderBottom:'1px solid '+(isDark?'#2a2a2a':'#eef0f2')}},R.createElement('span',{style:{fontWeight:600}},String(r.name)),R.createElement('span',{style:{display:'flex',gap:12,alignItems:'center'}},R.createElement('span',{style:{color:isDark?'#c9ced4':'#3b3f45'}},money(r.amount)),pill(r.status)));});return R.createElement('div',{style:wrap},R.createElement('h1',{style:{fontSize:24,fontWeight:700,margin:'0 0 14px'}},'Overview'),R.createElement('div',{style:{display:'flex',gap:12,marginBottom:16}},kpi('Total',money(total)),kpi('Accounts',String(rows.length)),kpi('Green',String(green))),R.createElement('div',{style:{border:'1px solid '+(isDark?'#333':'#e5e8ec'),borderRadius:10,overflow:'hidden',background:isDark?'#1a1a1a':'#fff'}},list));}module.exports.default=App;\", \"manifest\": {}, \"datasetMap\": [{\"alias\": \"rows\", \"datasetId\": \"rows\"}]}"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 20
+          }
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {}
+  }
+}
